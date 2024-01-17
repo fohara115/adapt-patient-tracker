@@ -101,9 +101,7 @@ while True:
         #distance_center = depth_image[p1[0]:p2[0], p1[1]:p2[1]][(p2[0]-p1[0])//2, (p2[1]-p1[1])//2]
         #print(distance_mean)
 
-        
-    cv2.namedWindow('ADAPT Patient Tracker', cv2.WINDOW_NORMAL)
-    cv2.imshow('RealSense Sensors', images)
+    cv2.imshow('ADAPT Patient Tracker', images)
     key = cv2.waitKey(1)
     # Press esc or 'q' to close the image window
     if key & 0xFF == ord('q') or key == 27:
