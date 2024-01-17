@@ -34,14 +34,14 @@ class SimpleTracker():
         print(target.shape)
 
         num_training_cycles = 48
-        losses = []
+        #losses = []
         for _ in tqdm(range(num_training_cycles)):
             
             output = self.model(frame_tensor)
             #print(output.shape)
             
             loss = self.loss_fn(output, target)
-            losses.append(float(loss.data))
+            #losses.append(float(loss.data))
 
             self.optimizer.zero_grad()
             loss.backward()
@@ -59,32 +59,20 @@ class SimpleTracker():
 
         output = self.model(frame_tensor)
 
-        # try without relearning anything
         _, _, c, d = torch.where(output == torch.max(output))
-
-        # roi = frame[x:x+w, y:y+h]
-        # roi_tensor = torch.from_numpy(roi).permute(2, 0, 1).unsqueeze(0).float() / 255.0
-
-        # # Forward pass through the tracker
-        # output = self.model(roi_tensor)
-
-        # # Compute the loss by comparing the output with a zero-filled tensor
-        # target = torch.zeros_like(output)
-        # loss = self.loss_fn(output, target)
-
-        # # Backpropagation and optimization
-        # self.optimizer.zero_grad()
-        # loss.backward()
-        # self.optimizer.step()
-
-        # Find the position of the highest activation in the output tensor
-        
-
 
         x = c
         y = d
 
         self.bbox = (x, y, w, h)
+
+        target = torch.zeros((1, 1, 480, 640))
+        target[0, 0, x:x+w, y:y+h] = 1
+
+        loss = self.loss_fn(output, target)
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
         return True, self.bbox
 
