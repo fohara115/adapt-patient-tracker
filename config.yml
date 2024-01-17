@@ -1,0 +1,21 @@
+device: 'cuda:0'
+
+input: 1
+recordings:
+  example1: 'data/20231201_153623.bag'
+  example2: 'data/20231201_152820.bag'
+  example3: 'data/20231201_152420.bag'
+  example4: 'data/20231124_164709.bag'
+  example5: 'data/20231124_164148.bag'
+
+processing:
+  clip_limit: 4
+  clip_replace: 153
+  img_height: 480
+  img_width: 640
+
+tracker:
+  type: 'MIL'
+  bbox_height: 150
+  bbox_width: 200
+  distance_trigger: 0.75
