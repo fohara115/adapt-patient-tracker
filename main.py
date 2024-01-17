@@ -94,11 +94,12 @@ while True:
             cv2.rectangle(images, p1, p2, (255,0,0), 2, 1)
 
         # Output signals
+        print(bbox)
         distance_pixels = depth_image[p1[0]:p2[0], p1[1]:p2[1]].flatten()
         filt_points = distance_pixels[(distance_pixels > 500) & (distance_pixels < 4500)]
         distance_mean = np.mean(filt_points) * depth_scale
         #distance_center = depth_image[p1[0]:p2[0], p1[1]:p2[1]][(p2[0]-p1[0])//2, (p2[1]-p1[1])//2]
-        print(distance_mean)
+        #print(distance_mean)
 
         
     cv2.namedWindow('ADAPT Patient Tracker', cv2.WINDOW_NORMAL)
