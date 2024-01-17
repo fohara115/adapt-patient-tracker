@@ -1,9 +1,11 @@
 import pyrealsense2 as rs
+import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 import yaml
 
 from load import load_bag_file, load_live_stream
+from trackers import SimpleTracker
 
 
 
@@ -11,8 +13,10 @@ from load import load_bag_file, load_live_stream
 
 cfg = yaml.load(open('config.yml', 'r'), Loader=yaml.CLoader)
 input_type = cfg['input']
-if input_type:
+if type(input_type) is int:
     filename = cfg['recordings']['example' + str(input_type)]
+else:
+    filename = None
 
 clip_limit = cfg['processing']['clip_limit']
 replace_color = cfg['processing']['clip_replace']
@@ -42,13 +46,14 @@ align_to = rs.stream.color
 align = rs.align(align_to)
 
 # Setup tracker
-init_bbox = (image_width//2 - (bbox_width//2), image_height//2 - (bbox_height//2), bbox_height, bbox_width)
-print(init_bbox)
+init_bbox = (image_width//2 - (bbox_width//2), image_height//2 - (bbox_height//2), bbox_width, bbox_height)
 tracker_init = False
 if tracker_type == 'MIL':
     tracker = cv2.TrackerMIL_create()
+elif tracker_type =='Custom1':
+    tracker = SimpleTracker()
 else:
-    raise Exception('Tracker type us bit supported.')
+    raise Exception('Tracker type is not supported.')
 
 
 
@@ -74,8 +79,6 @@ while True:
 
     # Tracker updating
     center_dist = depth_image[image_height//2, image_width//2] * depth_scale
-    
-    print(center_dist)
     if (center_dist > distance_trigger) and (not tracker_init): # Switch tracker on
         ret = tracker.init(bg_removed, init_bbox)
         tracker_init = True 
@@ -89,6 +92,14 @@ while True:
             p1 = (int(bbox[0]), int(bbox[1]))
             p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
             cv2.rectangle(images, p1, p2, (255,0,0), 2, 1)
+
+        # Output signals
+        distance_pixels = depth_image[p1[0]:p2[0], p1[1]:p2[1]].flatten()
+        filt_points = distance_pixels[(distance_pixels > 500) & (distance_pixels < 4500)]
+        distance_mean = np.mean(filt_points) * depth_scale
+        #distance_center = depth_image[p1[0]:p2[0], p1[1]:p2[1]][(p2[0]-p1[0])//2, (p2[1]-p1[1])//2]
+        print(distance_mean)
+
         
     cv2.namedWindow('ADAPT Patient Tracker', cv2.WINDOW_NORMAL)
     cv2.imshow('RealSense Sensors', images)
@@ -97,5 +108,6 @@ while True:
     if key & 0xFF == ord('q') or key == 27:
         cv2.destroyAllWindows()
         break
+
 
 pipeline.stop()
