@@ -21,8 +21,7 @@ def load_bag_file(path):
     rs.config.enable_device_from_file(config, path)
 
     FPS = 30
-    config.enable_stream(rs.stream.depth, rs.format.z16, FPS)
-    config.enable_stream(rs.stream.color)
+    config.enable_all_streams()
 
     return pipeline, config
 
@@ -42,8 +41,9 @@ def load_live_stream():
     device_product_line = str(device.get_info(rs.camera_info.product_line))
 
     FPS = 30
-    config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, FPS)
-    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, FPS)
+    # config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, FPS)
+    # config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, FPS)
+    config.enable_all_streams()
 
     return pipeline, config
 
