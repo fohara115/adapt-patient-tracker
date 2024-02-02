@@ -20,8 +20,10 @@ tracker:
   type: 'MIL'
   bbox_height: 150
   bbox_width: 200
+  bbox_qmin: 15
   distance_trigger: 0.75
 
 runtime: 
   display_window: False
-  print_distance: False
+  print_distance: True
+  print_coord: False

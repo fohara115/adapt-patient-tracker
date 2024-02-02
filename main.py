@@ -2,6 +2,7 @@ import pyrealsense2 as rs
 import numpy as np
 import cv2
 import yaml
+print(np.__version__)
 
 from load import load_bag_file, load_live_stream
 
@@ -21,8 +22,11 @@ image_width = cfg['processing']['img_width']
 tracker_type = cfg['tracker']['type']
 bbox_height = cfg['tracker']['bbox_height']
 bbox_width = cfg['tracker']['bbox_width']
+bbox_qmin = cfg['tracker']['bbox_qmin']
 distance_trigger = cfg['tracker']['distance_trigger']
 disp = cfg['runtime']['display_window']
+print_dist = cfg['runtime']['print_distance']
+print_coord = cfg['runtime']['print_coord']
 
 
 
@@ -88,6 +92,13 @@ while True:
             p1 = (int(bbox[0]), int(bbox[1]))
             p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
             cv2.rectangle(images, p1, p2, (255,0,0), 2, 1)
+
+    # Calculate signals of interest
+    bbox_min_dist = np.percentile(depth_image[int(bbox[0]):int(bbox[0]+bbox[2]), int(bbox[1]):int(bbox[1]+bbox[3])] * depth_scale, bbox_qmin)
+    if print_dist:
+        print(bbox_min_dist)
+    if print_coord:
+        print('dummy')
     
     if disp:
         #cv2.namedWindow('ADAPT Patient Tracker', cv2.WINDOW_NORMAL)
