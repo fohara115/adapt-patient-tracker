@@ -89,6 +89,8 @@ while True:
         continue
     depth_image = np.asanyarray(aligned_depth_frame.get_data())
     color_image = np.asanyarray(color_frame.get_data())
+    if depth_image.size == 0:
+        continue
 
     # Remove background and render images
     depth_image_3d = np.dstack((depth_image,depth_image,depth_image)) #depth image is 1 channel, color is 3 channels
@@ -115,7 +117,7 @@ while True:
 
         # Calculate signals of interest
         if ret:
-            bbox_min_dist = np.percentile(depth_image[int(bbox[0]):int(bbox[0]+bbox[2]), int(bbox[1]):int(bbox[1]+bbox[3])] * depth_scale, bbox_qmin)
+            bbox_min_dist = np.percentile(depth_image[int(bbox[1]):int(bbox[1]+bbox[3]), int(bbox[0]):int(bbox[0]+bbox[2])] * depth_scale, bbox_qmin)
         if print_dist:
             print(bbox_min_dist)
         if print_coord:
