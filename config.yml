@@ -1,12 +1,14 @@
 device: 'cuda:0'
 
-input: False
-recordings:
-  example1: '/media/fohara/645E941F5E93E856/bme/data/20231124_164148.bag'
-  example2: 'data/20231201_152820.bag'
-  example3: 'data/20231201_152420.bag'
-  example4: 'data/20231124_164709.bag'
-  example5: 'data/20231124_164148.bag'
+input:
+  live: True
+  root:     '/media/fohara/645E941F5E93E856/bme/data/'
+  select: 'example1'
+  example1: '20231124_164148.bag'
+  example2: '20231201_152820.bag'
+  example3: '20231201_152420.bag'
+  example4: '20231124_164709.bag'
+  example5: '20231124_164148.bag'
 
 processing:
   clip_limit: 4

@@ -5,14 +5,14 @@ import yaml
 
 from load import load_bag_file, load_live_stream
 
-print(cv2.cuda.getCudaEnabledDeviceCount() > 0)
+
 
 # ----- LOAD CONFIG -----
 
 cfg = yaml.load(open('config.yml', 'r'), Loader=yaml.CLoader)
-input_type = cfg['input']
-if input_type:
-    filename = cfg['recordings']['example' + str(input_type)]
+live_input = cfg['input']['live']
+if (not live_input):
+    filename = cfg['input']['root'] + cfg['input'][cfg['input']['select']]
 
 clip_limit = cfg['processing']['clip_limit']
 replace_color = cfg['processing']['clip_replace']
@@ -28,7 +28,7 @@ distance_trigger = cfg['tracker']['distance_trigger']
 # ----- VIDEO & TRACKER SETUP -----
 
 # Setup video origin
-if input_type and filename: 
+if (not live_input) and filename: 
     pipeline, config = load_bag_file(filename)
 else: 
     pipeline, config = load_live_stream()
