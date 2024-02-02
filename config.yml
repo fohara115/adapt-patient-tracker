@@ -24,7 +24,7 @@ tracker:
 runtime: 
   display_window: False
   print_distance: False
-  print_coord: True
+  print_coord: False
   write_output: True
-  output_root: '/home/fohara/Workspace/adapt-patient-tracker/output/'
+  output_root: '/home/fohara/Workspace/adapt-patient-tracker/logs/'
   output_filename: '164148_testing.txt'

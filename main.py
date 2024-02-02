@@ -66,8 +66,17 @@ if write_output:
 # ----- MAIN LOOP -----
 
 while True:
-    # Load valid depth and colour frames
+    # Load all data
     frames = pipeline.wait_for_frames()
+
+    # Check for end of recorded tape 
+    t = frames.get_timestamp()
+    if (not live_input):
+        if (t < t_prev):
+            break
+        t_prev = t
+    
+    # Align images
     aligned_frames = align.process(frames)
     aligned_depth_frame = aligned_frames.get_depth_frame()
     color_frame = aligned_frames.get_color_frame()
@@ -76,8 +85,6 @@ while True:
         continue
     depth_image = np.asanyarray(aligned_depth_frame.get_data())
     color_image = np.asanyarray(color_frame.get_data())
-    t = frames.get_timestamp()
-
 
     # Remove background and render images
     depth_image_3d = np.dstack((depth_image,depth_image,depth_image)) #depth image is 1 channel, color is 3 channels
@@ -126,10 +133,6 @@ while True:
             else:
                 print(f"{t},None,None,{center_dist}", file=f)
 
-    # Check for end of recorded tape 
-    if (not live_input):
-        if (t < t_prev):
-            break
-        t_prev = t
+    
 
 pipeline.stop()
