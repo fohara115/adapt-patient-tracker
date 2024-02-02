@@ -2,11 +2,19 @@ input:
   live: False
   root: '/media/fohara/645E941F5E93E856/bme/data/'
   select: 'example1'
-  example1: '20231124_164148.bag'
-  example2: '20231201_152820.bag'
-  example3: '20231201_152420.bag'
-  example4: '20231124_164709.bag'
-  example5: '20231124_164148.bag'
+  example1: '20231027_140116.bag'
+  example2: '20231027_140213.bag'
+  example3: '20231027_140520.bag'
+  example4: '20231027_140554.bag'
+  example5: '20231027_140653.bag'
+  example6: '20231027_140747.bag'
+  example7: '20231027_140829.bag'
+  example8: '20231027_140914.bag'
+  example9: '20231027_140948.bag'
+  example10: '20231124_163447.bag'
+  example11: '20231124_164148.bag'
+  example12: '20231124_164709.bag'
+  example13: '20231201_152420.bag'
 
 processing:
   clip_limit: 4
@@ -27,4 +35,4 @@ runtime:
   print_coord: False
   write_output: True
   output_root: '/home/fohara/Workspace/adapt-patient-tracker/logs/'
-  output_filename: '164148_testing.txt'
+  output_tag: 'MIL_MIN'

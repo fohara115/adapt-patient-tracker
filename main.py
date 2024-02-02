@@ -27,7 +27,10 @@ disp = cfg['runtime']['display_window']
 print_dist = cfg['runtime']['print_distance']
 print_coord = cfg['runtime']['print_coord']
 write_output = cfg['runtime']['write_output']
-output_dir = cfg['runtime']['output_root']+cfg['runtime']['output_filename']
+if (not live_input):
+    output_dir = cfg['runtime']['output_root']+cfg['runtime']['output_tag']+'_'+ cfg['input'][cfg['input']['select']][:-4] + '.txt'
+else:
+    output_dir = cfg['runtime']['output_root']+cfg['runtime']['output_tag']+'_LIVE.txt'
 
 
 
@@ -65,6 +68,7 @@ if write_output:
 
 # ----- MAIN LOOP -----
 
+print('Running...')
 while True:
     # Load all data
     frames = pipeline.wait_for_frames()
@@ -118,7 +122,6 @@ while True:
             print(f"Centre: ({int(bbox[0] + bbox[2]//2)}, {int(bbox[1] + bbox[3]//2)})")
     
     if disp:
-        #cv2.namedWindow('ADAPT Patient Tracker', cv2.WINDOW_NORMAL)
         cv2.imshow('RealSense Sensors', images)
         key = cv2.waitKey(1)
         # Press esc or 'q' to close the image window
