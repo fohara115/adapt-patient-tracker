@@ -93,12 +93,13 @@ while True:
             p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
             cv2.rectangle(images, p1, p2, (255,0,0), 2, 1)
 
-    # Calculate signals of interest
-    bbox_min_dist = np.percentile(depth_image[int(bbox[0]):int(bbox[0]+bbox[2]), int(bbox[1]):int(bbox[1]+bbox[3])] * depth_scale, bbox_qmin)
-    if print_dist:
-        print(bbox_min_dist)
-    if print_coord:
-        print('dummy')
+        # Calculate signals of interest
+        if ret:
+            bbox_min_dist = np.percentile(depth_image[int(bbox[0]):int(bbox[0]+bbox[2]), int(bbox[1]):int(bbox[1]+bbox[3])] * depth_scale, bbox_qmin)
+        if print_dist:
+            print(bbox_min_dist)
+        if print_coord:
+            print('dummy')
     
     if disp:
         #cv2.namedWindow('ADAPT Patient Tracker', cv2.WINDOW_NORMAL)
