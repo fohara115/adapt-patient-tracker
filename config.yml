@@ -21,3 +21,7 @@ tracker:
   bbox_height: 150
   bbox_width: 200
   distance_trigger: 0.75
+
+runtime: 
+  display_window: False
+  print_distance: False

@@ -22,6 +22,7 @@ tracker_type = cfg['tracker']['type']
 bbox_height = cfg['tracker']['bbox_height']
 bbox_width = cfg['tracker']['bbox_width']
 distance_trigger = cfg['tracker']['distance_trigger']
+disp = cfg['runtime']['display_window']
 
 
 
@@ -43,7 +44,6 @@ align = rs.align(align_to)
 
 # Setup tracker
 init_bbox = (image_width//2 - (bbox_width//2), image_height//2 - (bbox_height//2), bbox_height, bbox_width)
-print(init_bbox)
 tracker_init = False
 if tracker_type == 'MIL':
     tracker = cv2.TrackerMIL_create()
@@ -69,13 +69,12 @@ while True:
     # Remove background and render images
     depth_image_3d = np.dstack((depth_image,depth_image,depth_image)) #depth image is 1 channel, color is 3 channels
     bg_removed = np.where((depth_image_3d > clipping_distance) | (depth_image_3d <= 0), replace_color, color_image)
-    depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
-    images = np.hstack((bg_removed, depth_colormap))
+    if disp:
+        depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+        images = np.hstack((bg_removed, depth_colormap))
 
     # Tracker updating
     center_dist = depth_image[image_height//2, image_width//2] * depth_scale
-    
-    print(center_dist)
     if (center_dist > distance_trigger) and (not tracker_init): # Switch tracker on
         ret = tracker.init(bg_removed, init_bbox)
         tracker_init = True 
@@ -85,17 +84,18 @@ while True:
 
     if tracker_init:
         ret, bbox = tracker.update(bg_removed)
-        if ret:
+        if ret and disp:
             p1 = (int(bbox[0]), int(bbox[1]))
             p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
             cv2.rectangle(images, p1, p2, (255,0,0), 2, 1)
-        
-    cv2.namedWindow('ADAPT Patient Tracker', cv2.WINDOW_NORMAL)
-    cv2.imshow('RealSense Sensors', images)
-    key = cv2.waitKey(1)
-    # Press esc or 'q' to close the image window
-    if key & 0xFF == ord('q') or key == 27:
-        cv2.destroyAllWindows()
-        break
+    
+    if disp:
+        #cv2.namedWindow('ADAPT Patient Tracker', cv2.WINDOW_NORMAL)
+        cv2.imshow('RealSense Sensors', images)
+        key = cv2.waitKey(1)
+        # Press esc or 'q' to close the image window
+        if key & 0xFF == ord('q') or key == 27:
+            cv2.destroyAllWindows()
+            break
 
 pipeline.stop()
