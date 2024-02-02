@@ -5,7 +5,7 @@ import yaml
 
 from load import load_bag_file, load_live_stream
 
-
+print(cv2.cuda.getCudaEnabledDeviceCount() > 0)
 
 # ----- LOAD CONFIG -----
 

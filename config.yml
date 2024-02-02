@@ -1,8 +1,8 @@
 device: 'cuda:0'
 
-input: 1
+input: False
 recordings:
-  example1: 'data/20231201_153623.bag'
+  example1: '/media/fohara/645E941F5E93E856/bme/data/20231124_164148.bag'
   example2: 'data/20231201_152820.bag'
   example3: 'data/20231201_152420.bag'
   example4: 'data/20231124_164709.bag'
