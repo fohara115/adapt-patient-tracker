@@ -6,8 +6,8 @@ from tqdm import tqdm
 
 # Setup
 
-date = '20231027_140213'
-input_frames_dir = 'D:/bme/labels/frames/20231027_140213/'
+date = '20231124_164148'
+input_frames_dir = 'D:/bme/labels/frames/20231124_164148/'
 output_dir = f'D:/bme/labels/coords/tslab_{date}.txt' 
 
 with open(output_dir, 'w') as o:
