@@ -9,9 +9,9 @@ from load import load_bag_file, load_live_stream
 
 # ----- LOAD CONFIG -----
 
-date = "20231027_140116"
-filename = 'D:/bme/data/20231027_140116.bag'
-output_frames_dir = 'D:/bme/labels/frames/20231027_140116/'
+date = "20231201_152420"
+filename = 'D:/bme/data/20231201_152420.bag'
+output_frames_dir = 'D:/bme/labels/frames/20231201_152420/'
 clip_limit = 4
 
 
