@@ -1,10 +1,10 @@
 input:
   live: False
   root: '/media/fohara/645E941F5E93E856/bme/data/'
-  select: 'example1'
+  select: None
   example1: '20231027_140116.bag'
   example2: '20231027_140213.bag'
-  example3: '20231027_140520.bag'
+  example3: '20231027_140520.bag'	
   example4: '20231027_140554.bag'
   example5: '20231027_140653.bag'
   example6: '20231027_140747.bag'
@@ -17,8 +17,9 @@ input:
   example13: '20231201_152420.bag'
 
 processing:
-  clip_limit: 4
-  clip_replace: 153
+  enable_proc: True
+  clip_limit: 3
+  clip_replace: 0
   img_height: 480
   img_width: 640
 
@@ -30,9 +31,9 @@ tracker:
   distance_trigger: 0.75
 
 runtime: 
-  display_window: False
+  display_window: True
   print_distance: False
   print_coord: False
-  write_output: True
-  output_root: '/home/fohara/Workspace/adapt-patient-tracker/logs_clocks/'
-  output_tag: 'MIL_MIN'
+  write_output: False
+  output_root: '/home/fohara/Workspace/adapt-patient-tracker/feb06/'
+  output_tag: 'TRACKER_MIL'

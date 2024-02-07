@@ -2,18 +2,27 @@ import pyrealsense2 as rs
 import numpy as np
 import cv2
 import yaml
+import getopt
+import sys
 
 from load import load_bag_file, load_live_stream
 
 
+# ----- LOAD CONFIG & ARGS -----
 
-# ----- LOAD CONFIG -----
+argv = sys.argv[1:]
+opts, args = getopt.getopt(argv, 'e')
+if (len(args)>0):
+    select = args[0]
+else:
+    select = cfg['input']['select']
 
 cfg = yaml.load(open('config.yml', 'r'), Loader=yaml.CLoader)
 live_input = cfg['input']['live']
 if (not live_input):
-    filename = cfg['input']['root'] + cfg['input'][cfg['input']['select']]
+    filename = cfg['input']['root'] + cfg['input'][select]
 
+enable_proc = cfg['processing']['enable_proc']
 clip_limit = cfg['processing']['clip_limit']
 replace_color = cfg['processing']['clip_replace']
 image_height = cfg['processing']['img_height']
@@ -28,7 +37,7 @@ print_dist = cfg['runtime']['print_distance']
 print_coord = cfg['runtime']['print_coord']
 write_output = cfg['runtime']['write_output']
 if (not live_input):
-    output_dir = cfg['runtime']['output_root']+cfg['runtime']['output_tag']+'_'+ cfg['input'][cfg['input']['select']][:-4] + '.txt'
+    output_dir = cfg['runtime']['output_root']+cfg['runtime']['output_tag']+'_'+ cfg['input'][select][:-4] + '.txt'
 else:
     output_dir = cfg['runtime']['output_root']+cfg['runtime']['output_tag']+'_LIVE.txt'
 
@@ -56,6 +65,14 @@ init_bbox = (image_width//2 - (bbox_width//2), image_height//2 - (bbox_height//2
 tracker_init = False
 if tracker_type == 'MIL':
     tracker = cv2.TrackerMIL_create()
+elif tracker_type == 'BOOSTING':
+    tracker = cv2.TrackerBoosting_create()
+elif tracker_type == 'KCF':
+    tracker = cv2.TrackerKCF_create()
+elif tracker_type == 'TLD':
+    tracker = cv2.TrackerTLD_create()
+elif tracker_type == 'MEDIANFLOW':
+    tracker = cv2.TrackerMedianFlow_create()
 else:
     raise Exception('Tracker type us bit supported.')
 
@@ -93,8 +110,15 @@ while True:
         continue
 
     # Remove background and render images
-    depth_image_3d = np.dstack((depth_image,depth_image,depth_image)) #depth image is 1 channel, color is 3 channels
-    bg_removed = np.where((depth_image_3d > clipping_distance) | (depth_image_3d <= 0), replace_color, color_image)
+    if enable_proc:
+        #diffs = np.diff(depth_image, axis=1) * depth_scale
+        #diffs = np.pad(diffs, ((0, 0), (0, 1)), mode='constant')
+        #diffs = np.where(diffs < 0.5, 0, 255*np.ones((480, 640)))
+        depth_image_3d = np.dstack((depth_image,depth_image,depth_image)) #depth image is 1 channel, color is 3 channels
+        bg_removed = np.where((depth_image_3d > clipping_distance) | (depth_image_3d <= 0), replace_color, color_image)
+        #bg_removed[:, :, 2] = bg_removed[:, :, 2] + depth_image
+    else:
+        bg_removed = color_image
     if disp:
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
         images = np.hstack((bg_removed, depth_colormap))
