@@ -111,10 +111,7 @@ while True:
 
     # Remove background and render images
     if enable_proc:
-        #diffs = np.diff(depth_image, axis=1) * depth_scale
-        #diffs = np.pad(diffs, ((0, 0), (0, 1)), mode='constant')
-        #diffs = np.where(diffs < 0.5, 0, 255*np.ones((480, 640)))
-        depth_image_3d = np.dstack((depth_image,depth_image,depth_image)) #depth image is 1 channel, color is 3 channels
+        depth_image_3d = np.dstack((depth_image,depth_image,depth_image))
         bg_removed = np.where((depth_image_3d > clipping_distance) | (depth_image_3d <= 0), replace_color, color_image)
         #bg_removed[:, :, 2] = bg_removed[:, :, 2] + depth_image
     else:
