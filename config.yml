@@ -31,9 +31,9 @@ tracker:
   distance_trigger: 0.75
 
 runtime: 
-  display_window: False
+  display_window: True
   print_distance: False
   print_coord: False
-  write_output: True
+  write_output: False
   output_root: '/home/fohara/Workspace/adapt-patient-tracker/logs/CSRT_MIN/'
   output_tag: 'TRACKER_CSRT'

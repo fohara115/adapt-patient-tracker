@@ -4,11 +4,14 @@ import cv2
 import yaml
 import getopt
 import sys
+import serial
 
 from load import load_bag_file, load_live_stream
 
 
 # ----- LOAD CONFIG & ARGS -----
+
+cfg = yaml.load(open('config.yml', 'r'), Loader=yaml.CLoader)
 
 argv = sys.argv[1:]
 opts, args = getopt.getopt(argv, 'e')
@@ -17,7 +20,6 @@ if (len(args)>0):
 else:
     select = cfg['input']['select']
 
-cfg = yaml.load(open('config.yml', 'r'), Loader=yaml.CLoader)
 live_input = cfg['input']['live']
 if (not live_input):
     filename = cfg['input']['root'] + cfg['input'][select]
@@ -80,6 +82,11 @@ else:
 if write_output:
     with open(output_dir, 'w') as o:
         o.write(f"OUTPUT for LIVE: {live_input}   INPUT: {filename}\n")
+
+# Setup LCD
+BAUD = 9600
+ser = serial.Serial('/dev/ttyUSB0', BAUD)
+ser.write(b"Testing Testing\n")
 
 
 
@@ -158,6 +165,10 @@ while True:
                 print(f"{t},{int(bbox[0] + bbox[2]//2)},{int(bbox[1] + bbox[3]//2)},{bbox_min_dist}", file=f)
             else:
                 print(f"{t},None,None,{center_dist}", file=f)
+
+    # Write distance
+    if (tracker_init and ret):
+        ser.write(f"d={np.round(bbox_min_dist,6)} m\n".encode('utf-8'))
 
     
 
