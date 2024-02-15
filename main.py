@@ -84,9 +84,9 @@ if write_output:
         o.write(f"OUTPUT for LIVE: {live_input}   INPUT: {filename}\n")
 
 # Setup LCD
-BAUD = 9600
-ser = serial.Serial('/dev/ttyUSB0', BAUD)
-ser.write(b"Testing Testing\n")
+#BAUD = 9600
+#ser = serial.Serial('/dev/ttyUSB0', BAUD)
+#ser.write(b"Testing Testing\n")
 
 
 
@@ -167,8 +167,8 @@ while True:
                 print(f"{t},None,None,{center_dist}", file=f)
 
     # Write distance
-    if (tracker_init and ret):
-        ser.write(f"d={np.round(bbox_min_dist,6)} m\n".encode('utf-8'))
+    #if (tracker_init and ret):
+        #ser.write(f"d={np.round(bbox_min_dist,6)} m\n".encode('utf-8'))
 
     
 
