@@ -17,15 +17,15 @@ import cv2
 import pycuda.autoinit  # This is needed for initializing CUDA driver
 
 from load import load_bag_file, load_live_stream
-from utils.yolo_classes import get_cls_dict
-from utils.camera import add_camera_args, Camera
-from utils.display import open_window, set_display, show_fps
-from utils.visualization import BBoxVisualization
-from utils.yolo_with_plugins import TrtYOLO
+from trt_utils.yolo_classes import get_cls_dict
+from trt_utils.camera import add_camera_args, Camera
+from trt_utils.display import open_window, set_display, show_fps
+from trt_utils.visualization import BBoxVisualization
+from trt_utils.yolo_with_plugins import TrtYOLO
 
 
 WINDOW_NAME = 'TrtYOLODemo'
-
+cd
 
 def parse_args():
     """Parse input arguments."""
