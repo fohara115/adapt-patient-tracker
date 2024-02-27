@@ -29,6 +29,7 @@ CONF_THRESH = 0.3
 BAUD = 9600
 MONITOR_PORT = '/dev/ttyUSB0'
 
+tracker = cv2.TrackerMIL_create() #BROKEN, needs install
 
 # ----- VIDEO SETUP -----
 
@@ -46,7 +47,7 @@ cls_dict = get_cls_dict(CAT_NUM)
 
 # ----- TRACKER SETUP -----
 
-#tracker = cv2.TrackerMIL_create() #BROKEN, needs install
+tracker = cv2.TrackerMIL_create() #BROKEN, needs install
 
 
 # ----- SERIAL SETUP -----

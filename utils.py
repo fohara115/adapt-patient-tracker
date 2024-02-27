@@ -2,7 +2,13 @@ import pyrealsense2 as rs
 import numpy as np
 import cv2
 import os.path
- 
+
+def get_depth_scale(profile):
+    '''Simple helper to get depth sensor scale from realsense'''
+    depth_sensor = profile.get_device().first_depth_sensor()
+    depth_scale = depth_sensor.get_depth_scale()
+
+    return depth_scale
 
 def load_bag_file(path):
     """
