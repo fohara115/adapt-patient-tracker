@@ -1,5 +1,5 @@
 input:
-  live: False
+  live: True
   root: '/media/fohara/645E941F5E93E856/bme/data/'
   select: None
   example1: '20231027_140116.bag'
@@ -31,9 +31,9 @@ tracker:
   distance_trigger: 0.75
 
 runtime: 
-  display_window: False
+  display_window: True
   print_distance: True
   print_coord: False
   write_output: False
   output_root: '/home/fohara/Workspace/adapt-patient-tracker/logs/CSRT_MIN/'
-  output_tag: 'TRACKER_CSRT'
+  output_tag: 'TRACKER_MILs'

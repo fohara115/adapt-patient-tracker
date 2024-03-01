@@ -6,7 +6,7 @@ import getopt
 import sys
 import serial
 
-from load import load_bag_file, load_live_stream
+from utils import load_bag_file, load_live_stream
 
 
 # ----- LOAD CONFIG & ARGS -----
