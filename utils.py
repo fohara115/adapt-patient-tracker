@@ -4,7 +4,17 @@ import cv2
 import os.path
 import sys
 import getopt
+import time
+from datetime import datetime
 
+# Overall, needs to be neatened
+
+
+def update_fps(fps, tic):
+    toc = time.time()
+    curr_fps = 1.0 / (toc - tic)
+    fps = curr_fps if fps == 0.0 else (fps*0.95 + curr_fps*0.05)
+    return fps, toc
 
 def process_cli_args(iroot, oroot, default, live):
     'process directories and filenames for io'
@@ -21,6 +31,10 @@ def process_cli_args(iroot, oroot, default, live):
     elif (len(args)>1):
         input_path = iroot+args[0]
         output_path = oroot+args[1]+args[0]
+
+    if live:
+        now = datetime.now()
+        output_path = oroot+now.strftime("%Y%m%d_%H%M%S")+'.txt'
 
     return input_path, output_path
 

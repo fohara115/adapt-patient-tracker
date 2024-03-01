@@ -2,174 +2,197 @@ import pyrealsense2 as rs
 import numpy as np
 import cv2
 import yaml
-import getopt
-import sys
 import serial
+import utils
+import os
+import pycuda.autoinit 
+import time
 
-from utils import load_bag_file, load_live_stream
+
+from trt_utils.yolo_classes import get_cls_dict
+from trt_utils.camera import add_camera_args, Camera
+from trt_utils.display import open_window, set_display, show_fps
+from trt_utils.visualization import BBoxVisualization
+from trt_utils.yolo_with_plugins import TrtYOLO
+
+# sudo chmod a+rw /dev/ttyUSB0
+
+
 
 
 # ----- LOAD CONFIG & ARGS -----
 
 cfg = yaml.load(open('config.yml', 'r'), Loader=yaml.CLoader)
+LIVE_FEED = cfg['input']['live_feed']
+INPUT_ROOT = cfg['input']['root']
+DEFAULT_VID = cfg['input']['default']
+DISP = cfg['project']['display_window']
+ENABLE_LCD = cfg['project']['lcd_monitor']
+ENABLE_MOTOR_SIG = cfg['project']['enable_adam_signals']
+CLIP_DIST = cfg['video']['clip_limit']
+IMAGE_HEIGHT = cfg['video']['img_height']
+IMAGE_WIDTH = cfg['video']['img_width']
+IMAGE_LFOV_DEG = cfg['video']['img_wide_fov_deg']
+DIST_THRESH = cfg['parameters']['seated_trigger']
+UI_STATE = cfg['parameters']['ui_state']
+TRACKER_TYPE = cfg['tracker']['type']
+BBOX_HEIGHT = cfg['tracker']['bbox_height']
+BBOX_WIDTH = cfg['tracker']['bbox_width']
+BBOX_QMIN = cfg['tracker']['bbox_qmin']
+MODEL = cfg['model']['name']
+CAT_NUM = cfg['model']['cat_num']
+PERSON_CLASS = cfg['model']['person_label']
+LETTER_BOX = cfg['model']['letter_box']
+CONF_THRESH = cfg['model']['conf_thr']
+BAUD = cfg['serial']['baud_rate']
+MONITOR_PORT = cfg['serial']['lcd_port']
+ADAM_PORT = cfg['serial']['adam_port']
+WRITE_OUTPUT = cfg['output']['log_output']
+OUTPUT_ROOT = cfg['output']['output_root']
 
-argv = sys.argv[1:]
-opts, args = getopt.getopt(argv, 'e')
-if (len(args)>0):
-    select = args[0]
-else:
-    select = cfg['input']['select']
-
-live_input = cfg['input']['live']
-if (not live_input):
-    filename = cfg['input']['root'] + cfg['input'][select]
-
-enable_proc = cfg['processing']['enable_proc']
-clip_limit = cfg['processing']['clip_limit']
-replace_color = cfg['processing']['clip_replace']
-image_height = cfg['processing']['img_height']
-image_width = cfg['processing']['img_width']
-tracker_type = cfg['tracker']['type']
-bbox_height = cfg['tracker']['bbox_height']
-bbox_width = cfg['tracker']['bbox_width']
-bbox_qmin = cfg['tracker']['bbox_qmin']
-distance_trigger = cfg['tracker']['distance_trigger']
-disp = cfg['runtime']['display_window']
-print_dist = cfg['runtime']['print_distance']
-print_coord = cfg['runtime']['print_coord']
-write_output = cfg['runtime']['write_output']
-if (not live_input):
-    output_dir = cfg['runtime']['output_root']+cfg['runtime']['output_tag']+'_'+ cfg['input'][select][:-4] + '.txt'
-else:
-    output_dir = cfg['runtime']['output_root']+cfg['runtime']['output_tag']+'_LIVE.txt'
+input_dir, output_dir = utils.process_cli_args(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED)
 
 
 
-# ----- VIDEO & TRACKER SETUP -----
+# ----- VIDEO SETUP -----
 
-# Setup video origin
-if (not live_input) and filename: 
-    pipeline, config = load_bag_file(filename)
-else: 
-    pipeline, config = load_live_stream()
-
-# Setup video stream w/ alignment
+pipeline, config = utils.load_live_stream() if LIVE_FEED else utils.load_bag_file(input_dir)
 profile = pipeline.start(config)
-depth_sensor = profile.get_device().first_depth_sensor()
-depth_scale = depth_sensor.get_depth_scale()
-clipping_distance = clip_limit / depth_scale
-align_to = rs.stream.color
-align = rs.align(align_to)
-t_prev = 0
+depth_scale = utils.get_depth_scale(profile)
+align = rs.align(rs.stream.color)
+fps = 0
 
-# Setup tracker
-init_bbox = (image_width//2 - (bbox_width//2), image_height//2 - (bbox_height//2), bbox_height, bbox_width)
-tracker_init = False
-if tracker_type == 'MIL':
-    tracker = cv2.TrackerMIL_create()
-elif tracker_type == 'BOOSTING':
-    tracker = cv2.TrackerBoosting_create()
-elif tracker_type == 'CSRT':
+
+
+# ----- DETECTOR SETUP -----
+
+cls_dict = get_cls_dict(CAT_NUM)
+vis = BBoxVisualization(cls_dict)
+trt_yolo = TrtYOLO(MODEL, CAT_NUM, LETTER_BOX)
+
+
+
+# ----- TRACKER SETUP -----
+
+if TRACKER_TYPE=='CSRT':
     tracker = cv2.TrackerCSRT_create()
-elif tracker_type == 'TLD':
-    tracker = cv2.TrackerTLD_create()
-elif tracker_type == 'MEDIANFLOW':
-    tracker = cv2.TrackerMedianFlow_create()
+elif TRACKER_TYPE=='KCF':
+    tracker = cv2.TrackerKCF_create()
+elif TRACKER_TYPE=='MIL':
+    tracker = cv2.TrackerMIL_create()
 else:
-    raise Exception('Tracker type us bit supported.')
+    raise(f'ERROR: Provided tracker type {TRACKER_TYPE} is not supported in this project.')
+init_bbox = (IMAGE_WIDTH//2 - (BBOX_WIDTH//2), IMAGE_HEIGHT//2 - (BBOX_HEIGHT//2), BBOX_HEIGHT, BBOX_WIDTH)
+tracker_init = False
 
-# Setup output
-if write_output:
+
+
+# ----- SERIAL SETUP -----
+
+if ENABLE_LCD:
+    lcd_monitor = serial.Serial(MONITOR_PORT, BAUD)
+if ENABLE_MOTOR_SIG:
+    motor_port = serial.Serial(ADAM_PORT, BAUD)
+
+
+
+# ----- OUTPUT SETUP -----
+
+if WRITE_OUTPUT:
     with open(output_dir, 'w') as o:
-        o.write(f"OUTPUT for LIVE: {live_input}   INPUT: {filename}\n")
-
-# Setup LCD
-#BAUD = 9600
-#ser = serial.Serial('/dev/ttyUSB0', BAUD)
-#ser.write(b"Testing Testing\n")
+        o.write(f"OUTPUT for LIVE: {LIVE_FEED}   INPUT: {input_dir}\n")
 
 
 
 # ----- MAIN LOOP -----
 
-print('Running...')
-while True:
-    # Load all data
-    frames = pipeline.wait_for_frames()
+try:
+    tic = time.time()
+    while True:
 
-    # Check for end of recorded tape 
-    t = frames.get_timestamp()
-    if (not live_input):
-        if (t < t_prev):
-            break
-        t_prev = t
-    
-    # Align images
-    aligned_frames = align.process(frames)
-    aligned_depth_frame = aligned_frames.get_depth_frame()
-    color_frame = aligned_frames.get_color_frame()
-    if not aligned_depth_frame or not color_frame:
-        print('Skipping problematic frame...')
-        continue
-    depth_image = np.asanyarray(aligned_depth_frame.get_data())
-    color_image = np.asanyarray(color_frame.get_data())
-    if depth_image.size == 0:
-        continue
+        # Get RealSense Images
+        frames = pipeline.wait_for_frames()
+        error, col_img, dep_img = utils.format_frames(align, frames, depth_scale)
+        if error:
+            continue
 
-    # Remove background and render images
-    if enable_proc:
-        depth_image_3d = np.dstack((depth_image,depth_image,depth_image))
-        bg_removed = np.where((depth_image_3d > clipping_distance) | (depth_image_3d <= 0), replace_color, color_image)
-        #bg_removed[:, :, 2] = bg_removed[:, :, 2] + depth_image
-    else:
-        bg_removed = color_image
-    if disp:
-        depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
-        images = np.hstack((bg_removed, depth_colormap))
+        # Get YOLO Bounding Boxes 
+        boxes, confs, clss = trt_yolo.detect(col_img, CONF_THRESH)
+        boxes, confs, clss = boxes[clss==PERSON_CLASS], confs[clss==PERSON_CLASS], clss[clss==PERSON_CLASS]
 
-    # Tracker updating
-    center_dist = depth_image[image_height//2, image_width//2] * depth_scale
-    if (center_dist > distance_trigger) and (not tracker_init): # Switch tracker on
-        ret = tracker.init(bg_removed, init_bbox)
-        tracker_init = True 
-    elif (center_dist < distance_trigger) and (tracker_init) and (center_dist > 1e-6): # Switch tracker off
-        tracker_init = False
-        print('too close! turning off')
+        # Mask Colour Images
+        person_mask = utils.person_masking(boxes, image_height=IMAGE_HEIGHT, image_width=IMAGE_WIDTH)
+        depth_mask = utils.depth_masking(dep_img, clip_dist=CLIP_DIST)
+        per_img = col_img*person_mask*depth_mask
 
-    if tracker_init:
-        ret, bbox = tracker.update(bg_removed)
-        if ret and disp:
-            p1 = (int(bbox[0]), int(bbox[1]))
-            p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-            cv2.rectangle(images, p1, p2, (255,0,0), 2, 1)
+        # Switch Tracker On/Off From Center Distance
+        center_dist = utils.get_center_distance(dep_img)
+        if (center_dist > DIST_THRESH) and (not tracker_init):
+            tracker_init = True 
+            ret = tracker.init(per_img, init_bbox)
+        elif (center_dist < DIST_THRESH) and (tracker_init) and (center_dist > 1e-6):
+            tracker_init = False
 
-        # Calculate signals of interest
-        if ret:
-            bbox_min_dist = np.percentile(depth_image[int(bbox[1]):int(bbox[1]+bbox[3]), int(bbox[0]):int(bbox[0]+bbox[2])] * depth_scale, bbox_qmin)
-        if print_dist:
-            print(bbox_min_dist)
-        if print_coord:
-            print(f"Centre: ({int(bbox[0] + bbox[2]//2)}, {int(bbox[1] + bbox[3]//2)})")
-    
-    if disp:
-        cv2.imshow('RealSense Sensors', images)
-        key = cv2.waitKey(1)
-        # Press esc or 'q' to close the image window
-        if key & 0xFF == ord('q') or key == 27:
-            cv2.destroyAllWindows()
-            break
+        # Update Tracker
+        if tracker_init:
+            ret, bbox = tracker.update(per_img)
 
-    if write_output:
-        with open(output_dir, "a") as f:
-            if (tracker_init and ret):
-                print(f"{t},{int(bbox[0] + bbox[2]//2)},{int(bbox[1] + bbox[3]//2)},{bbox_min_dist}", file=f)
+        # Calculate Signals of Interest
+        if tracker_init and ret and bbox:
+            bbox_roi = bbox*(np.array(bbox) > 0)
+            d = np.percentile(dep_img[int(bbox_roi[1]):int(bbox_roi[1]+bbox_roi[3]), int(bbox_roi[0]):int(bbox_roi[0]+bbox_roi[2])], BBOX_QMIN)
+            a = ((bbox_roi[0] + bbox_roi[2]//2) - IMAGE_WIDTH//2) * IMAGE_LFOV_DEG / IMAGE_WIDTH
+        else:
+            d = None
+            a = None
+
+        # Write LCD Feedback
+        if ENABLE_LCD:
+            if tracker_init:
+                lcd_monitor.write(f"{np.round(d,2)} m,{np.round(a,0)} deg\n".encode('utf-8'))
+            else: 
+                lcd_monitor.write(f"Patient Seated\n".encode('utf-8'))
+
+        # Write Motor Signals
+        if ENABLE_MOTOR_SIG:
+            motor_port.write(f"{UI_STATE},{int(not tracker_init)},{np.round(d,4)},{np.round(a,4)}\n".encode('utf-8'))
+
+        # Display Window
+        if DISP:
+            if tracker_init:
+                img = vis.draw_bboxes(per_img, boxes, confs, clss)
+                if ret and bbox:
+                    p1 = (int(bbox[0]), int(bbox[1]))
+                    p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
+                    cv2.rectangle(img, p1, p2, (255,0,0), 2, 1)
+                img = show_fps(img, fps)
+                cv2.imshow('RealSense Sensors', img)
             else:
-                print(f"{t},None,None,{center_dist}", file=f)
+                img = show_fps(col_img, fps)
+                cv2.imshow('RealSense Sensors', img)
 
-    # Write distance
-    #if (tracker_init and ret):
-        #ser.write(f"d={np.round(bbox_min_dist,6)} m\n".encode('utf-8'))
+            key = cv2.waitKey(1)
+            if key & 0xFF == ord('q') or key == 27:
+                break
 
-    
+        # Write Log File
+        if WRITE_OUTPUT:
+            if tracker_init:
+                if bbox:
+                    with open(output_dir, "a") as f:
+                       print(f"{frames.get_timestamp()},{UI_STATE},{int(not tracker_init)},{d},{a},{fps},{bbox}", file=f)
+            else:
+                with open(output_dir, "a") as f:
+                    print(f"{frames.get_timestamp()},{UI_STATE},{int(not tracker_init)},{d},{a},{fps},()", file=f)
+        
+        # Update FPS
+        fps, tic = utils.update_fps(fps, tic)
 
-pipeline.stop()
+finally:
+    cv2.destroyAllWindows()
+    pipeline.stop()
+    if ENABLE_LCD:
+        lcd_monitor.close()
+    if ENABLE_MOTOR_SIG:
+        motor_port.close()
+

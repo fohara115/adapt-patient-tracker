@@ -6,7 +6,7 @@ input:
 project:
   display_window: True
   lcd_monitor: False
-  enable_adam_signals: True
+  enable_adam_signals: False
 
 video:
   clip_limit: 3.5
@@ -38,4 +38,4 @@ serial:
 
 output:
   log_output: False
-  output_root: '/home/fohara/Workspace/adapt-patient-tracker/logs/'
+  output_root: '/home/fohara/project/adapt-patient-tracker/logs/'
