@@ -39,15 +39,16 @@ def process_cli_args(iroot, oroot, default, live):
     return input_path, output_path
 
 
-def get_center_distance(depth_image, img_height=480, img_width=640, roi_height=128, roi_width=128, percentile=5):
+def get_center_distance(depth_image, img_height=480, img_width=640, roi_height=128, roi_width=128, percentile=25):
     '''Return center region of the frame to detect patient seated mode'''
     if depth_image.size == 0:
         return None
 
     x_range = [(img_width//2 - roi_width//2), (img_width//2 + roi_width//2)]
     y_range = [(img_height//2 - roi_height//2), (img_height//2 + roi_height//2)]
+    vals = depth_image[x_range[0]:x_range[1], y_range[0]:y_range[1]][depth_image[x_range[0]:x_range[1], y_range[0]:y_range[1]] > 0]
 
-    return np.percentile(depth_image[x_range[0]:x_range[1], y_range[0]:y_range[1]], percentile)
+    return np.percentile(vals, percentile)
 
 
 

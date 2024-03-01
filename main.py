@@ -80,6 +80,7 @@ else:
     raise(f'ERROR: Provided tracker type {TRACKER_TYPE} is not supported in this project.')
 init_bbox = (IMAGE_WIDTH//2 - (BBOX_WIDTH//2), IMAGE_HEIGHT//2 - (BBOX_HEIGHT//2), BBOX_HEIGHT, BBOX_WIDTH)
 tracker_init = False
+missing = False
 
 
 
@@ -129,12 +130,19 @@ try:
         elif (center_dist < DIST_THRESH) and (tracker_init) and (center_dist > 1e-6):
             tracker_init = False
 
-        # Update Tracker
+        # Update Tracker if Person is Detected
         if tracker_init:
-            ret, bbox = tracker.update(per_img)
+            num_people = len(clss)
+            if num_people == 0:
+                missing = True
+            elif (num_people > 0) and missing:
+                missing = False
+                ret, bbox = tracker.update(per_img)
+            else:
+                ret, bbox = tracker.update(per_img)
 
         # Calculate Signals of Interest
-        if tracker_init and ret and bbox:
+        if tracker_init and ret and bbox and not missing:
             bbox_roi = bbox*(np.array(bbox) > 0)
             d = np.percentile(dep_img[int(bbox_roi[1]):int(bbox_roi[1]+bbox_roi[3]), int(bbox_roi[0]):int(bbox_roi[0]+bbox_roi[2])], BBOX_QMIN)
             a = ((bbox_roi[0] + bbox_roi[2]//2) - IMAGE_WIDTH//2) * IMAGE_LFOV_DEG / IMAGE_WIDTH
@@ -144,20 +152,22 @@ try:
 
         # Write LCD Feedback
         if ENABLE_LCD:
-            if tracker_init:
+            if missing:
+                lcd_monitor.write(f"Patient Missing\n".encode('utf-8'))
+            elif tracker_init:
                 lcd_monitor.write(f"{np.round(d,2)} m,{np.round(a,0)} deg\n".encode('utf-8'))
             else: 
                 lcd_monitor.write(f"Patient Seated\n".encode('utf-8'))
 
         # Write Motor Signals
         if ENABLE_MOTOR_SIG:
-            motor_port.write(f"{UI_STATE},{int(not tracker_init)},{np.round(d,4)},{np.round(a,4)}\n".encode('utf-8'))
+            motor_port.write(f"{UI_STATE},{int(not tracker_init)},{missing},{np.round(d,4)},{np.round(a,4)}\n".encode('utf-8'))
 
         # Display Window
         if DISP:
             if tracker_init:
                 img = vis.draw_bboxes(per_img, boxes, confs, clss)
-                if ret and bbox:
+                if ret and bbox and not missing:
                     p1 = (int(bbox[0]), int(bbox[1]))
                     p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
                     cv2.rectangle(img, p1, p2, (255,0,0), 2, 1)

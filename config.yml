@@ -29,7 +29,7 @@ model:
   cat_num: 80
   person_label: 0
   letter_box: True
-  conf_thr: 0.3
+  conf_thr: 0.5
 
 serial: # sudo chmod a+rw /dev/ttyUSB0
   baud_rate: 9600
