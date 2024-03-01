@@ -1,22 +1,18 @@
-import pyrealsense2 as rs
-import numpy as np
 import cv2
-import yaml
-import serial
-import utils
+import numpy as np
 import os
-import pycuda.autoinit 
+import pycuda.autoinit
+import pyrealsense2 as rs
+import serial
 import time
-
+import utils
+import yaml
 
 from trt_utils.yolo_classes import get_cls_dict
 from trt_utils.camera import add_camera_args, Camera
 from trt_utils.display import open_window, set_display, show_fps
 from trt_utils.visualization import BBoxVisualization
 from trt_utils.yolo_with_plugins import TrtYOLO
-
-# sudo chmod a+rw /dev/ttyUSB0
-
 
 
 

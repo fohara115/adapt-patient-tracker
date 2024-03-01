@@ -31,7 +31,7 @@ model:
   letter_box: True
   conf_thr: 0.3
 
-serial:
+serial: # sudo chmod a+rw /dev/ttyUSB0
   baud_rate: 9600
   lcd_port: '/dev/ttyUSB0'
   adam_port: '/dev/ttyACM0'
@@ -39,3 +39,5 @@ serial:
 output:
   log_output: False
   output_root: '/home/fohara/project/adapt-patient-tracker/logs/'
+
+
