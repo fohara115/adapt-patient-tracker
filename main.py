@@ -28,6 +28,7 @@ ENABLE_MOTOR_SIG = cfg['project']['enable_adam_signals']
 CLIP_DIST = cfg['video']['clip_limit']
 IMAGE_HEIGHT = cfg['video']['img_height']
 IMAGE_WIDTH = cfg['video']['img_width']
+IMAGE_CHANNELS = cfg['video']['img_channels']
 IMAGE_LFOV_DEG = cfg['video']['img_wide_fov_deg']
 DIST_THRESH = cfg['parameters']['seated_trigger']
 UI_STATE = cfg['parameters']['ui_state']
@@ -50,21 +51,12 @@ input_dir, output_dir = utils.process_cli_args(iroot=INPUT_ROOT, oroot=OUTPUT_RO
 
 
 
-# ----- VIDEO SETUP -----
-
-pipeline, config = utils.load_live_stream() if LIVE_FEED else utils.load_bag_file(input_dir)
-profile = pipeline.start(config)
-depth_scale = utils.get_depth_scale(profile)
-align = rs.align(rs.stream.color)
-fps = 0
-
-
-
 # ----- DETECTOR SETUP -----
 
 cls_dict = get_cls_dict(CAT_NUM)
 vis = BBoxVisualization(cls_dict)
 trt_yolo = TrtYOLO(MODEL, CAT_NUM, LETTER_BOX)
+person_mask = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS), np.uint8)
 
 
 
@@ -101,6 +93,16 @@ if WRITE_OUTPUT:
 
 
 
+# ----- VIDEO SETUP -----
+
+pipeline, config = utils.load_live_stream() if LIVE_FEED else utils.load_bag_file(input_dir)
+profile = pipeline.start(config)
+depth_scale = utils.get_depth_scale(profile)
+align = rs.align(rs.stream.color)
+fps = 0
+
+
+
 # ----- MAIN LOOP -----
 
 try:
@@ -118,7 +120,7 @@ try:
         boxes, confs, clss = boxes[clss==PERSON_CLASS], confs[clss==PERSON_CLASS], clss[clss==PERSON_CLASS]
 
         # Mask Colour Images
-        person_mask = utils.person_masking(boxes, image_height=IMAGE_HEIGHT, image_width=IMAGE_WIDTH)
+        person_mask = utils.person_masking(boxes, person_mask, image_height=IMAGE_HEIGHT, image_width=IMAGE_WIDTH)
         depth_mask = utils.depth_masking(dep_img, clip_dist=CLIP_DIST)
         per_img = col_img*person_mask*depth_mask
 
@@ -136,8 +138,9 @@ try:
             if num_people == 0:
                 missing = True
             elif (num_people > 0) and missing:
-                missing = False
-                ret, bbox = tracker.update(per_img)
+                if np.sum(bbox) != 0:
+                    missing = False
+                    ret, bbox = tracker.update(per_img)
             else:
                 ret, bbox = tracker.update(per_img)
 
