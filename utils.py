@@ -2,6 +2,77 @@ import pyrealsense2 as rs
 import numpy as np
 import cv2
 import os.path
+import sys
+import getopt
+
+
+def process_cli_args(iroot, oroot, default, live):
+    'process directories and filenames for io'
+
+    argv = sys.argv[1:]
+    opts, args = getopt.getopt(argv, 'e')
+
+    if (len(args)==0):
+        input_path = iroot+default
+        output_path = oroot+'default_'+default
+    elif (len(args)==1):
+        input_path = iroot+args[0]
+        output_path = oroot+args[0]
+    elif (len(args)>1):
+        input_path = iroot+args[0]
+        output_path = oroot+args[1]+args[0]
+
+    return input_path, output_path
+
+
+def get_center_distance(depth_image, img_height=480, img_width=640, roi_height=128, roi_width=128, percentile=5):
+    '''Return center region of the frame to detect patient seated mode'''
+    if depth_image.size == 0:
+        return None
+
+    x_range = [(img_width//2 - roi_width//2), (img_width//2 + roi_width//2)]
+    y_range = [(img_height//2 - roi_height//2), (img_height//2 + roi_height//2)]
+
+    return np.percentile(depth_image[x_range[0]:x_range[1], y_range[0]:y_range[1]], percentile)
+
+
+
+def format_frames(align, frames, depth_scale):
+    '''Create cleaned np arrays from pipeline frames and align'''
+
+    aligned_frames = align.process(frames)
+    depth_frame = aligned_frames.get_depth_frame()
+    color_frame = aligned_frames.get_color_frame()
+    if not depth_frame or not color_frame:
+        return True, None, None
+    
+    depth_image = np.asanyarray(depth_frame.get_data())
+    color_image = np.asanyarray(color_frame.get_data())
+    if depth_image.size == 0 or color_image.size == 0:
+        return True, None, None
+
+    color_image = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
+    #depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+    depth_image = depth_image * depth_scale
+
+    return False, color_image, depth_image
+
+
+def depth_masking(depth_image, clip_dist, image_height=480, image_width=640, num_channels=3):
+    '''480x640x3 Mask of 1's and 0's from depth frame'''
+    mask = np.where((depth_image < clip_dist) & (depth_image > 1e-6), (1), np.zeros((image_height, image_width), np.uint8))
+    
+    return np.dstack((mask,mask,mask))
+
+
+def person_masking(boxes, image_height=480, image_width=640, num_channels=3):
+    '''480x640x3 Mask of 1's and 0's from classification boxes'''
+    mask = np.zeros((image_height, image_width, num_channels), np.uint8)
+    for xmin, ymin, xmax, ymax in boxes:
+        cv2.rectangle(mask, (xmin, ymin), (xmax, ymax), (1, 1, 1), -1)
+
+    return mask
+    
 
 def get_depth_scale(profile):
     '''Simple helper to get depth sensor scale from realsense'''
@@ -9,6 +80,7 @@ def get_depth_scale(profile):
     depth_scale = depth_sensor.get_depth_scale()
 
     return depth_scale
+
 
 def load_bag_file(path):
     """

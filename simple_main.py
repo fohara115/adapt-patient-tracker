@@ -1,9 +1,7 @@
 import pyrealsense2 as rs
 import numpy as np
 import cv2
-#import yaml
-import getopt
-import sys
+import yaml
 import serial
 import utils
 import os
@@ -23,43 +21,45 @@ from trt_utils.yolo_with_plugins import TrtYOLO
 
 # ----- LOAD CONFIG & ARGS -----
 
-#cfg = yaml.load(open('config.yml', 'r'), Loader=yaml.CLoader)
-LIVE_FEED = True
-DISP = True
-CAT_NUM = 80
-PERSON_CLASS = 0
-MODEL = 'yolov4-tiny'
-LETTER_BOX = True
-CONF_THRESH = 0.3
-ENABLE_LCD = True
-BAUD = 9600
-MONITOR_PORT = '/dev/ttyUSB0'
-ROOT = '/media/fohara/645E941F5E93E856/bme/data/'
-DEFAULT_VID = '20231124_163447.bag'
+cfg = yaml.load(open('config.yml', 'r'), Loader=yaml.CLoader)
+LIVE_FEED = cfg['input']['live_feed']
+INPUT_ROOT = cfg['input']['root']
+DEFAULT_VID = cfg['input']['default']
+DISP = cfg['project']['display_window']
+ENABLE_LCD = cfg['project']['lcd_monitor']
+ENABLE_MOTOR_SIG = cfg['project']['enable_adam_signals']
+CLIP_DIST = cfg['video']['clip_limit']
+IMAGE_HEIGHT = cfg['video']['img_height']
+IMAGE_WIDTH = cfg['video']['img_width']
+IMAGE_LFOV_DEG = cfg['video']['img_wide_fov_deg']
+DIST_THRESH = cfg['parameters']['seated_trigger']
+UI_STATE = cfg['parameters']['ui_state']
+TRACKER_TYPE = cfg['tracker']['type']
+BBOX_HEIGHT = cfg['tracker']['bbox_height']
+BBOX_WIDTH = cfg['tracker']['bbox_width']
+BBOX_QMIN = cfg['tracker']['bbox_qmin']
+MODEL = cfg['model']['name']
+CAT_NUM = cfg['model']['cat_num']
+PERSON_CLASS = cfg['model']['person_label']
+LETTER_BOX = cfg['model']['letter_box']
+CONF_THRESH = cfg['model']['conf_thr']
+BAUD = cfg['serial']['baud_rate']
+MONITOR_PORT = cfg['serial']['lcd_port']
+ADAM_PORT = cfg['serial']['adam_port']
+WRITE_OUTPUT = cfg['output']['log_output']
+OUTPUT_ROOT = cfg['output']['log_output']
 
-IMAGE_HEIGHT = 480
-IMAGE_WIDTH = 640
-IMAGE_LFOV_DEG = 42
-BBOX_HEIGHT = 150
-BBOX_WIDTH = 200
-DIST_THRESH = 0.75
-BBOX_QMIN = 15
+input_dir, output_dir = utils.process_cli_args(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED)
 
-##from args
-argv = sys.argv[1:]
-opts, args = getopt.getopt(argv, 'e')
-if (len(args)>0):
-    filename = ROOT+args[0]
-else:
-    filename = ROOT+DEFAULT_VID
 
 
 # ----- VIDEO SETUP -----
 
-pipeline, config = utils.load_live_stream() if LIVE_FEED else utils.load_bag_file(filename)
+pipeline, config = utils.load_live_stream() if LIVE_FEED else utils.load_bag_file(input_dir)
 profile = pipeline.start(config)
 depth_scale = utils.get_depth_scale(profile)
 align = rs.align(rs.stream.color)
+
 
 
 # ----- DETECTOR SETUP -----
@@ -69,89 +69,86 @@ vis = BBoxVisualization(cls_dict)
 trt_yolo = TrtYOLO(MODEL, CAT_NUM, LETTER_BOX)
 
 
+
 # ----- TRACKER SETUP -----
 
-tracker = cv2.TrackerCSRT_create() #cv2.TrackerKCF_create(), cv2.TrackerMIL_create()
+if TRACKER_TYPE=='CSRT':
+    tracker = cv2.TrackerCSRT_create()
+elif TRACKER_TYPE=='KCF':
+    tracker = cv2.TrackerKCF_create()
+elif TRACKER_TYPE=='MIL':
+    tracker = cv2.TrackerMIL_create()
+else:
+    raise(f'ERROR: Provided tracker type {TRACKER_TYPE} is not supported in this project.')
 init_bbox = (IMAGE_WIDTH//2 - (BBOX_WIDTH//2), IMAGE_HEIGHT//2 - (BBOX_HEIGHT//2), BBOX_HEIGHT, BBOX_WIDTH)
 tracker_init = False
-
 
 
 
 # ----- SERIAL SETUP -----
 
 if ENABLE_LCD:
-    lcd_monitor = serial.Serial(MONITOR_PORT, BAUD) ##ser.write(b"Testing Testing\n")
+    lcd_monitor = serial.Serial(MONITOR_PORT, BAUD)
+if ENABLE_MOTOR_SIG:
+    motor_port = serial.Serial(ADAM_PORT, BAUD)
+    
 
 
 # ----- MAIN LOOP -----
+
 try:
     fps = 0.0
     tic = time.time()
     while True:
+        # Align images
         frames = pipeline.wait_for_frames()
         t = frames.get_timestamp()
-
-    
-        # Align images
-        aligned_frames = align.process(frames)
-        depth_frame = aligned_frames.get_depth_frame()
-        color_frame = aligned_frames.get_color_frame()
-        if not depth_frame or not color_frame:
-            print('Skipping problematic frame...')
+        error, col_img, dep_img = utils.format_frames(align, frames, depth_scale)
+        if error:
             continue
-        depth_image = np.asanyarray(depth_frame.get_data())
-        color_image = np.asanyarray(color_frame.get_data())
-        if depth_image.size == 0:
-            continue
-        color_image = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
-        depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
-        
-
 
         # YOLO
-        boxes, confs, clss = trt_yolo.detect(color_image, CONF_THRESH)
+        boxes, confs, clss = trt_yolo.detect(col_img, CONF_THRESH)
         boxes, confs, clss = boxes[clss==PERSON_CLASS], confs[clss==PERSON_CLASS], clss[clss==PERSON_CLASS]
-        img = vis.draw_bboxes(color_image, boxes, confs, clss)
-        img = show_fps(img, fps)
-
 
         # MASKING
-        mask = np.zeros(color_image.shape, np.uint8)
-        for xmin, ymin, xmax, ymax in boxes:
-            cv2.rectangle(mask, (xmin, ymin), (xmax, ymax), (1, 1, 1), -1)
-        fcimg = color_image*mask
+        person_mask = utils.person_masking(boxes, image_height=IMAGE_HEIGHT, image_width=IMAGE_WIDTH)
+        depth_mask = utils.depth_masking(dep_img, clip_dist=CLIP_DIST)
+        per_img = col_img*person_mask*depth_mask
 
         # MIL TRACKER
-        center_dist = depth_image[IMAGE_HEIGHT//2, IMAGE_WIDTH//2] * depth_scale
+        center_dist = utils.get_center_distance(dep_img)
         if (center_dist > DIST_THRESH) and (not tracker_init): # Switch tracker on
-            ret = tracker.init(color_image, init_bbox)
+            ret = tracker.init(per_img, init_bbox)
             tracker_init = True 
         elif (center_dist < DIST_THRESH) and (tracker_init) and (center_dist > 1e-6): # Switch tracker off
             tracker_init = False
             print('too close! turning off')
 
         if tracker_init:
-            ret, bbox = tracker.update(fcimg)
+            ret, bbox = tracker.update(per_img)
             if ret and DISP:
                 p1 = (int(bbox[0]), int(bbox[1]))
                 p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-                cv2.rectangle(fcimg, p1, p2, (255,0,0), 2, 1)
-
-            if ret:
-                out_dist = np.percentile(depth_image[int(bbox[1]):int(bbox[1]+bbox[3]), int(bbox[0]):int(bbox[0]+bbox[2])] * depth_scale, BBOX_QMIN)
-                out_angle = ((bbox[0] + bbox[2]//2) - IMAGE_WIDTH//2) * IMAGE_LFOV_DEG / IMAGE_WIDTH
-                #print(f"{out_dist}, {out_angle}")
-
+                cv2.rectangle(per_img, p1, p2, (255,0,0), 2, 1)
+            try:
+                if ret:
+                    out_dist = np.percentile(dep_img[int(bbox[1]):int(bbox[1]+bbox[3]), int(bbox[0]):int(bbox[0]+bbox[2])] * depth_scale, BBOX_QMIN)
+                    out_angle = ((bbox[0] + bbox[2]//2) - IMAGE_WIDTH//2) * IMAGE_LFOV_DEG / IMAGE_WIDTH
+                    #print(f"{out_dist}, {out_angle}")
+            except:
+                out_dist = None
+                out_angle = None
 
         # DISP
         #images = np.hstack((img, depth_colormap))
-        fcimg = show_fps(fcimg, fps)
+        img = vis.draw_bboxes(per_img, boxes, confs, clss)
+        img = show_fps(img, fps)
         if DISP:
             if tracker_init:
-                cv2.imshow('RealSense Sensors', fcimg)
+                cv2.imshow('RealSense Sensors', img)
             else:
-                cv2.imshow('RealSense Sensors', color_image)
+                cv2.imshow('RealSense Sensors', col_img)
             key = cv2.waitKey(1)
             # Press esc or 'q' to close the image window
             if key & 0xFF == ord('q') or key == 27:
@@ -159,10 +156,11 @@ try:
                 break
 
         # LCD
-        if tracker_init and ret:
-            lcd_monitor.write(f"{np.round(out_dist,2)} m,{np.round(out_angle,0)} deg\n".encode('utf-8'))
-        else: 
-            lcd_monitor.write(f"Patient Seated\n".encode('utf-8'))
+        if ENABLE_LCD:
+            if tracker_init and ret:
+                lcd_monitor.write(f"{np.round(out_dist,2)} m,{np.round(out_angle,0)} deg\n".encode('utf-8'))
+            else: 
+                lcd_monitor.write(f"Patient Seated\n".encode('utf-8'))
 
 
         # FPS
@@ -175,6 +173,8 @@ try:
 finally:
     cv2.destroyAllWindows()
     pipeline.stop()
+    if ENABLE_LCD:
+        lcd_monitor.close()
 
 
 
