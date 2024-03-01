@@ -79,7 +79,7 @@ def depth_masking(depth_image, clip_dist, image_height=480, image_width=640, num
     
     return np.dstack((mask,mask,mask))
 
-def person_masking_depr(boxes, person_mask_queue, image_height=480, image_width=640, num_channels=3):
+def person_masking(boxes, image_height=480, image_width=640, num_channels=3):
     '''480x640x3 Mask of 1's and 0's from classification boxes'''
     mask = np.zeros((image_height, image_width, num_channels), np.uint8)
     for xmin, ymin, xmax, ymax in boxes:
