@@ -79,16 +79,23 @@ def depth_masking(depth_image, clip_dist, image_height=480, image_width=640, num
     
     return np.dstack((mask,mask,mask))
 
-
-def person_masking(boxes, prev_mask, image_height=480, image_width=640, num_channels=3):
+def person_masking_depr(boxes, person_mask_queue, image_height=480, image_width=640, num_channels=3):
     '''480x640x3 Mask of 1's and 0's from classification boxes'''
     mask = np.zeros((image_height, image_width, num_channels), np.uint8)
     for xmin, ymin, xmax, ymax in boxes:
         cv2.rectangle(mask, (xmin, ymin), (xmax, ymax), (1, 1, 1), -1)
 
-    mask = mask + prev_mask*0.8
+    return mask
 
-    return np.clip(mask, 0, 1)
+
+def person_masking_depr(boxes, person_mask_queue, image_height=480, image_width=640, num_channels=3):
+    '''480x640x3 Mask of 1's and 0's from classification boxes'''
+    mask = np.zeros((image_height, image_width, num_channels), np.uint8)
+    for xmin, ymin, xmax, ymax in boxes:
+        cv2.rectangle(mask, (xmin, ymin), (xmax, ymax), (1, 1, 1), -1)
+    person_mask_queue = np.append(person_mask_queue[:, :, :, 0:person_mask_queue.shape[3]-1], mask[:,:,:,np.newaxis], axis=3)
+    full_mask = np.sum(person_mask_queue, axis=3) > 0
+    return full_mask
     
 
 def get_depth_scale(profile):

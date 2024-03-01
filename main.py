@@ -56,7 +56,7 @@ input_dir, output_dir = utils.process_cli_args(iroot=INPUT_ROOT, oroot=OUTPUT_RO
 cls_dict = get_cls_dict(CAT_NUM)
 vis = BBoxVisualization(cls_dict)
 trt_yolo = TrtYOLO(MODEL, CAT_NUM, LETTER_BOX)
-person_mask = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS), np.uint8)
+person_mask_queue = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS, 3), np.uint8)
 
 
 
@@ -120,9 +120,9 @@ try:
         boxes, confs, clss = boxes[clss==PERSON_CLASS], confs[clss==PERSON_CLASS], clss[clss==PERSON_CLASS]
 
         # Mask Colour Images
-        person_mask = utils.person_masking(boxes, person_mask, image_height=IMAGE_HEIGHT, image_width=IMAGE_WIDTH)
+        person_mask = utils.person_masking(boxes, person_mask_queue, image_height=IMAGE_HEIGHT, image_width=IMAGE_WIDTH)
         depth_mask = utils.depth_masking(dep_img, clip_dist=CLIP_DIST)
-        per_img = col_img*person_mask*depth_mask
+        per_img = col_img*depth_mask*person_mask
 
         # Switch Tracker On/Off From Center Distance
         center_dist = utils.get_center_distance(dep_img)
