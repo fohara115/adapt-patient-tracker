@@ -1,12 +1,13 @@
 input:
-  live_feed: False
+  live_feed: True
   root: '/media/fohara/645E941F5E93E856/bme/data/'
   default: '20231124_163447.bag'
 
 project:
   display_window: True
-  lcd_monitor: False
-  enable_adam_signals: False
+  lcd_monitor: True
+  enable_ui_input: True
+  enable_adam_signal: False
 
 video:
   clip_limit: 3.5
@@ -17,7 +18,7 @@ video:
 
 parameters:
   seated_trigger: 0.75
-  ui_state: 1
+  init_ui_state: 1
 
 tracker:
   type: 'CSRT'
@@ -35,7 +36,8 @@ model:
 serial: # sudo chmod a+rw /dev/ttyUSB0
   baud_rate: 9600
   lcd_port: '/dev/ttyUSB0'
-  adam_port: '/dev/ttyACM0'
+  d_port: '/dev/ttyACM0'
+  a_port: '/dev/ttyACM1'
 
 output:
   log_output: False

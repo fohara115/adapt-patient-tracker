@@ -24,14 +24,15 @@ INPUT_ROOT = cfg['input']['root']
 DEFAULT_VID = cfg['input']['default']
 DISP = cfg['project']['display_window']
 ENABLE_LCD = cfg['project']['lcd_monitor']
-ENABLE_MOTOR_SIG = cfg['project']['enable_adam_signals']
+ENABLE_UI_INPUT = cfg['project']['enable_ui_input']
+ENABLE_ADAM_SIG = cfg['project']['enable_adam_signal']
 CLIP_DIST = cfg['video']['clip_limit']
 IMAGE_HEIGHT = cfg['video']['img_height']
 IMAGE_WIDTH = cfg['video']['img_width']
 IMAGE_CHANNELS = cfg['video']['img_channels']
 IMAGE_LFOV_DEG = cfg['video']['img_wide_fov_deg']
 DIST_THRESH = cfg['parameters']['seated_trigger']
-UI_STATE = cfg['parameters']['ui_state']
+DEF_UI_STATE = cfg['parameters']['init_ui_state']
 TRACKER_TYPE = cfg['tracker']['type']
 BBOX_HEIGHT = cfg['tracker']['bbox_height']
 BBOX_WIDTH = cfg['tracker']['bbox_width']
@@ -43,7 +44,8 @@ LETTER_BOX = cfg['model']['letter_box']
 CONF_THRESH = cfg['model']['conf_thr']
 BAUD = cfg['serial']['baud_rate']
 MONITOR_PORT = cfg['serial']['lcd_port']
-ADAM_PORT = cfg['serial']['adam_port']
+D_PORT = cfg['serial']['d_port']
+A_PORT = cfg['serial']['a_port']
 WRITE_OUTPUT = cfg['output']['log_output']
 OUTPUT_ROOT = cfg['output']['output_root']
 
@@ -81,8 +83,10 @@ missing = False
 
 if ENABLE_LCD:
     lcd_monitor = serial.Serial(MONITOR_PORT, BAUD)
-if ENABLE_MOTOR_SIG:
-    motor_port = serial.Serial(ADAM_PORT, BAUD)
+if ENABLE_D_SIG:
+    d_port = serial.Serial(D_PORT, BAUD)
+if ENABLE_A_SIG:
+    a_port = serial.Serial(A_PORT, BAUD)
 
 
 
@@ -109,6 +113,9 @@ fps = 0
 try:
     tic = time.time()
     while True:
+
+        # Get UI Input
+        ui_state = DEF_UI_STATE # TODO
 
         # Get RealSense Images
         frames = pipeline.wait_for_frames()
@@ -161,13 +168,16 @@ try:
             if missing:
                 lcd_monitor.write(f"Patient Missing\n".encode('utf-8'))
             elif tracker_init:
-                lcd_monitor.write(f"{np.round(d,2)} m,{np.round(a,0)} deg\n".encode('utf-8'))
+                if d and a:
+                    lcd_monitor.write(f"{np.round(d,2)} m,{np.round(a,0)} deg\n".encode('utf-8'))
+                else:
+                    lcd_monitor.write(f"{d} m,{a} deg\n".encode('utf-8'))
             else: 
                 lcd_monitor.write(f"Patient Seated\n".encode('utf-8'))
 
         # Write Motor Signals
-        if ENABLE_MOTOR_SIG:
-            motor_port.write(f"{UI_STATE},{int(not tracker_init)},{missing},{np.round(d,4)},{np.round(a,4)}\n".encode('utf-8'))
+        if ENABLE_ADAM_SIG:
+            utils.send_adam_signals(d_port, a_port, d, a, ui_state, tracker_init, missing)
 
         # Display Window
         if DISP:

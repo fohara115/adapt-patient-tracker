@@ -9,6 +9,22 @@ from datetime import datetime
 
 # Overall, needs to be neatened
 
+def send_adam_signals(d_port, a_port, d, a, ui_state, tracker_init, missing):
+    'Send two ports to adam'
+    
+    d_value = np.round(d,3) if d else d
+    a_value = np.round(a,3) if a else a
+    if (not tracker_init):
+        state = 1
+    elif (ui_state == 0)
+        state = 1
+    elif (missing):
+        state = 3
+    else:
+        state = 2
+    d_port.write(f"1,{d_value},{state},{ui_state}\n".encode('utf-8'))
+    a_port.write(f"2,{a_value},{state},{ui_state}\n".encode('utf-8'))
+
 
 def update_fps(fps, tic):
     toc = time.time()
