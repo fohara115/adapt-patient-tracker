@@ -177,9 +177,9 @@ try:
             if num_people == 0:
                 missing = True
             elif (num_people > 0) and missing:
-                if np.sum(bbox) != 0:
-                    missing = False
-                    ret, bbox = tracker.update(per_img)
+                #if np.sum(bbox) != 0:
+                missing = False
+                ret, bbox = tracker.update(per_img)
             else:
                 ret, bbox = tracker.update(per_img)
 
