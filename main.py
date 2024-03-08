@@ -15,6 +15,9 @@ from trt_utils.display import open_window, set_display, show_fps
 from trt_utils.visualization import BBoxVisualization
 from trt_utils.yolo_with_plugins import TrtYOLO
 
+print('Delaying to switch ports...')
+time.sleep(3)
+print('Starting program...')
 
 
 # ----- LOAD CONFIG & ARGS -----
@@ -135,13 +138,14 @@ try:
             utils.update_lcd_board_state(lcd_monitor, ui_state)
 
         # Check ESTOP
-        estop = utils.check_estop(lcd_monitor)
-        if estop:
-            if ENABLE_D_SIG:
-                utils.send_d_stop(d_port)
-            if ENABLE_A_SIG:
-                utils.send_a_stop(a_port)
-            break
+        if ENABLE_LCD:
+            estop = utils.check_estop(lcd_monitor)
+            if estop:
+                if ENABLE_D_SIG:
+                    utils.send_d_stop(d_port)
+                if ENABLE_A_SIG:
+                    utils.send_a_stop(a_port)
+                break
             
 
         # Get RealSense Images

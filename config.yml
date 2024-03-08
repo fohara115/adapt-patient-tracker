@@ -5,9 +5,9 @@ input:
 
 project:
   display_window: True
-  lcd_monitor: True
+  lcd_monitor: False
   enable_ui_input: True
-  enable_d_signal: False
+  enable_d_signal: True
   enable_a_signal: False
 
 video:
