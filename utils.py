@@ -9,7 +9,19 @@ from datetime import datetime
 
 # Overall, needs to be neatened
 
-def 
+def read_gpio_state(B0_PIN, B1_PIN)
+    b0 = GPIO.input(B0_PIN)
+    b1 = GPIO.input(B1_PIN)
+
+    print(f"b0: {b0}     b1:  {b1}")
+
+
+def update_lcd_board_state(lcd_monitor, ui_state):
+    if ui_state == 0:
+        lcd_monitor.write(f"S1\n".encode('utf-8'))
+    else:
+        lcd_monitor.write(f"S2\n".encode('utf-8'))
+    
 
 def send_adam_signals(d_port, a_port, d, a, ui_state, tracker_init, missing):
     'Send two ports to adam'

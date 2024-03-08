@@ -130,7 +130,17 @@ try:
 
         # Get UI Input
         ui_state = DEF_UI_STATE # TODO
-        # TODO: Update LCD state
+        utils.read_gpio_state(B0_PIN, B1_PIN)
+        # TODO: Update LCD state. utils.update_lcd_board_state()
+
+        # Check E-Stop
+        if ENABLE_LCD:
+            if lcd_monitor.in_waiting > 0:
+                msg = lcd_monitor.read(lcd_monitor.in_waiting)
+                if msg.decode('utf-8') == 'ESTOP':
+                    # TODO e-stop protocol.
+                    break
+                
 
         # Get RealSense Images
         frames = pipeline.wait_for_frames()
