@@ -120,6 +120,7 @@ profile = pipeline.start(config)
 depth_scale = utils.get_depth_scale(profile)
 align = rs.align(rs.stream.color)
 fps = 0
+t_prev = 0
 
 
 
@@ -150,6 +151,10 @@ try:
 
         # Get RealSense Images
         frames = pipeline.wait_for_frames()
+        t = frames.get_timestamp()
+        if t_prev > t:
+            break
+        t_prev = t
         error, col_img, dep_img = utils.format_frames(align, frames, depth_scale)
         if error:
             continue
@@ -237,10 +242,10 @@ try:
             if tracker_init:
                 if bbox:
                     with open(output_dir, "a") as f:
-                       print(f"{frames.get_timestamp()},{ui_state},{int(not tracker_init)},{d},{a},{fps},{bbox}", file=f)
+                       print(f"{t},{ui_state},{int(not tracker_init)},{d},{a},{fps},{bbox}", file=f)
             else:
                 with open(output_dir, "a") as f:
-                    print(f"{frames.get_timestamp()},{ui_state},{int(not tracker_init)},{d},{a},{fps},()", file=f)
+                    print(f"{t},{ui_state},{int(not tracker_init)},{d},{a},{fps},()", file=f)
         
         # Update FPS
         fps, tic = utils.update_fps(fps, tic)
