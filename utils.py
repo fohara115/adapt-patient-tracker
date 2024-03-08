@@ -9,6 +9,8 @@ from datetime import datetime
 
 # Overall, needs to be neatened
 
+def 
+
 def send_adam_signals(d_port, a_port, d, a, ui_state, tracker_init, missing):
     'Send two ports to adam'
     

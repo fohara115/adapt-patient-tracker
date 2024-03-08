@@ -33,6 +33,11 @@ model:
   letter_box: True
   conf_thr: 0.2
 
+gpio:
+  byte0: 15
+  byte1: 16
+  safety_light: 26
+
 serial: # sudo chmod a+rw /dev/ttyUSB0
   baud_rate: 9600
   lcd_port: '/dev/ttyUSB0'

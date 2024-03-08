@@ -1,4 +1,5 @@
 import cv2
+import Jetson.GPIO as GPIO
 import numpy as np
 import os
 import pycuda.autoinit
@@ -42,6 +43,9 @@ CAT_NUM = cfg['model']['cat_num']
 PERSON_CLASS = cfg['model']['person_label']
 LETTER_BOX = cfg['model']['letter_box']
 CONF_THRESH = cfg['model']['conf_thr']
+B0_PIN = cfg['gpio']['byte0']
+B1_PIN = cfg['gpio']['byte1']
+LED_PIN = cfg['gpio']['safety_light']
 BAUD = cfg['serial']['baud_rate']
 MONITOR_PORT = cfg['serial']['lcd_port']
 D_PORT = cfg['serial']['d_port']
@@ -90,6 +94,16 @@ if ENABLE_A_SIG:
 
 
 
+# ----- GPIO SETUP -----
+
+if ENABLE_UI_INPUT:
+    GPIO.setmode(GPIO.BOARD)
+    GPIO.setup(B0_PIN, GPIO.IN)
+    GPIO.setup(B1_PIN, GPIO.IN)
+
+
+
+
 # ----- OUTPUT SETUP -----
 
 if WRITE_OUTPUT:
@@ -116,6 +130,7 @@ try:
 
         # Get UI Input
         ui_state = DEF_UI_STATE # TODO
+        # TODO: Update LCD state
 
         # Get RealSense Images
         frames = pipeline.wait_for_frames()
