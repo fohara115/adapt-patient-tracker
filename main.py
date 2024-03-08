@@ -134,14 +134,15 @@ try:
         if ENABLE_LCD:
             utils.update_lcd_board_state(lcd_monitor, ui_state)
 
-        # Check E-Stop
-        if ENABLE_LCD:
-            if lcd_monitor.in_waiting > 0:
-                msg = lcd_monitor.read(lcd_monitor.in_waiting)
-                if msg.decode('utf-8') == 'ESTOP':
-                    # TODO e-stop protocol.
-                    break
-                
+        # Check ESTOP
+        estop = utils.check_estop(lcd_monitor)
+        if estop:
+            if ENABLE_D_SIG:
+                utils.send_d_stop(d_port)
+            if ENABLE_A_SIG:
+                utils.send_a_stop(a_port)
+            break
+            
 
         # Get RealSense Images
         frames = pipeline.wait_for_frames()

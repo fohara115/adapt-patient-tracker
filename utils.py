@@ -10,6 +10,19 @@ from datetime import datetime
 
 # Overall, needs to be neatened
 
+def send_d_stop(d_port):
+    d_port.write(f"1,None,4,None\n".encode('utf-8'))
+
+def send_a_stop(a_port):
+    a_port.write(f"2,None,4,None\n".encode('utf-8'))
+
+def check_estop(lcd_monitor):
+     if lcd_monitor.in_waiting > 0:
+         return True
+     else: 
+         return False
+
+
 def read_gpio_state(B0_PIN, B1_PIN):
     b0 = GPIO.input(B0_PIN)
     b1 = GPIO.input(B1_PIN)
