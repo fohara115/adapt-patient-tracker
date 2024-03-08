@@ -15,9 +15,6 @@ from trt_utils.display import open_window, set_display, show_fps
 from trt_utils.visualization import BBoxVisualization
 from trt_utils.yolo_with_plugins import TrtYOLO
 
-print('Delaying to switch ports...')
-time.sleep(3)
-print('Starting program...')
 
 
 # ----- LOAD CONFIG & ARGS -----
@@ -133,7 +130,8 @@ try:
     while True:
 
         # Get UI Input
-        ui_state = utils.read_gpio_state(B0_PIN, B1_PIN)
+        if ENABLE_UI_INPUT:
+            ui_state = utils.read_gpio_state(B0_PIN, B1_PIN)
         if ENABLE_LCD:
             utils.update_lcd_board_state(lcd_monitor, ui_state)
 
