@@ -56,6 +56,8 @@ OUTPUT_ROOT = cfg['output']['output_root']
 
 input_dir, output_dir = utils.process_cli_args(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED)
 
+if not LIVE_FEED:
+    print(f"{input_dir}...")
 
 
 # ----- DETECTOR SETUP -----
