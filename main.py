@@ -153,13 +153,13 @@ try:
             continue
 
         # Get YOLO Bounding Boxes 
-        boxes, confs, clss = trt_yolo.detect(col_img, CONF_THRESH)
+        depth_mask = utils.depth_masking(dep_img, clip_dist=CLIP_DIST)
+        boxes, confs, clss = trt_yolo.detect(col_img*depth_mask, CONF_THRESH)
         boxes, confs, clss = boxes[clss==PERSON_CLASS], confs[clss==PERSON_CLASS], clss[clss==PERSON_CLASS]
 
         # Mask Colour Images
         person_mask = utils.person_masking(boxes, image_height=IMAGE_HEIGHT, image_width=IMAGE_WIDTH)
-        depth_mask = utils.depth_masking(dep_img, clip_dist=CLIP_DIST)
-        per_img = col_img*depth_mask*np.where(person_mask+prev_mask1+prev_mask2>0, True, False)
+        per_img = col_img*np.where(person_mask+prev_mask1+prev_mask2>0, True, False)#*depth_mask
         prev_mask1 = person_mask
         prev_mask2 = prev_mask1
 
