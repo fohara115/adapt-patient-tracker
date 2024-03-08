@@ -4,7 +4,7 @@ input:
   default: '20231124_163447.bag'
 
 project:
-  display_window: True
+  display_window: False
   lcd_monitor: False
   enable_ui_input: False
   enable_d_signal: False
@@ -46,7 +46,7 @@ serial: # sudo chmod a+rw /dev/ttyUSB0
   a_port: '/dev/ttyACM1'
 
 output:
-  log_output: False
+  log_output: True
   output_root: '/home/fohara/project/adapt-patient-tracker/logs/'
 
 

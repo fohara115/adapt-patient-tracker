@@ -132,6 +132,8 @@ try:
         # Get UI Input
         if ENABLE_UI_INPUT:
             ui_state = utils.read_gpio_state(B0_PIN, B1_PIN)
+        else: 
+            ui_state = DEF_UI_STATE
         if ENABLE_LCD:
             utils.update_lcd_board_state(lcd_monitor, ui_state)
 
@@ -153,13 +155,13 @@ try:
             continue
 
         # Get YOLO Bounding Boxes 
-        depth_mask = utils.depth_masking(dep_img, clip_dist=CLIP_DIST)
-        boxes, confs, clss = trt_yolo.detect(col_img*depth_mask, CONF_THRESH)
+        boxes, confs, clss = trt_yolo.detect(col_img, CONF_THRESH)
         boxes, confs, clss = boxes[clss==PERSON_CLASS], confs[clss==PERSON_CLASS], clss[clss==PERSON_CLASS]
 
         # Mask Colour Images
+        depth_mask = utils.depth_masking(dep_img, clip_dist=CLIP_DIST)
         person_mask = utils.person_masking(boxes, image_height=IMAGE_HEIGHT, image_width=IMAGE_WIDTH)
-        per_img = col_img*np.where(person_mask+prev_mask1+prev_mask2>0, True, False)#*depth_mask
+        per_img = col_img*np.where(person_mask+prev_mask1+prev_mask2>0, True, False)*depth_mask
         prev_mask1 = person_mask
         prev_mask2 = prev_mask1
 
@@ -235,10 +237,10 @@ try:
             if tracker_init:
                 if bbox:
                     with open(output_dir, "a") as f:
-                       print(f"{frames.get_timestamp()},{UI_STATE},{int(not tracker_init)},{d},{a},{fps},{bbox}", file=f)
+                       print(f"{frames.get_timestamp()},{ui_state},{int(not tracker_init)},{d},{a},{fps},{bbox}", file=f)
             else:
                 with open(output_dir, "a") as f:
-                    print(f"{frames.get_timestamp()},{UI_STATE},{int(not tracker_init)},{d},{a},{fps},()", file=f)
+                    print(f"{frames.get_timestamp()},{ui_state},{int(not tracker_init)},{d},{a},{fps},()", file=f)
         
         # Update FPS
         fps, tic = utils.update_fps(fps, tic)
