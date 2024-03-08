@@ -10,6 +10,15 @@ from datetime import datetime
 
 # Overall, needs to be neatened
 
+
+def full_height_box(bbox, img_h, img_w, width=200):
+    center_x = int(bbox[0] + bbox[2]//2)
+    p1 = (center_x - width//2, 0)
+    p2 = (center_x + width//2, img_h)
+
+    return p1, p2    
+
+
 def send_d_stop(d_port):
     d_port.write(f"1,None,4,None\n".encode('utf-8'))
 

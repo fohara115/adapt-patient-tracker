@@ -228,6 +228,8 @@ try:
                     p1 = (int(bbox[0]), int(bbox[1]))
                     p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
                     cv2.rectangle(img, p1, p2, (255,0,0), 2, 1)
+                    p1, p2 = utils.full_height_box(bbox, IMAGE_HEIGHT, IMAGE_WIDTH)
+                    cv2.rectangle(img, p1, p2, (0,0,255), 2, 1)
                 img = show_fps(img, fps)
                 cv2.imshow('RealSense Sensors', img)
             else:
