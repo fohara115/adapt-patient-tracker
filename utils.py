@@ -177,7 +177,10 @@ def get_center_distance(depth_image, img_height=480, img_width=640, roi_height=1
     y_range = [(img_height//2 - roi_height//2), (img_height//2 + roi_height//2)]
     vals = depth_image[x_range[0]:x_range[1], y_range[0]:y_range[1]][depth_image[x_range[0]:x_range[1], y_range[0]:y_range[1]] > 0]
 
-    return np.percentile(vals, percentile)
+    if (vals.size > 0):
+        return np.percentile(vals, percentile)
+    else:
+        return 0
 
 
 

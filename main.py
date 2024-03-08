@@ -61,6 +61,11 @@ input_dir, output_dir = utils.process_cli_args(iroot=INPUT_ROOT, oroot=OUTPUT_RO
 if not LIVE_FEED:
     print(f"{input_dir}...")
 
+print('Delaying to switch ports...')
+time.sleep(2)
+print('Beginning')
+
+
 
 # ----- DETECTOR SETUP -----
 
@@ -200,13 +205,6 @@ try:
             p1, p2 = utils.full_height_box(bbox, IMAGE_HEIGHT, IMAGE_WIDTH, width=ROI_WIDTH)
             d = utils.calculate_dist_from_roi(dep_img, p1, p2, BBOX_MIN, BBOX_QMIN)
             a = utils.calculate_ang(p1, p2, IMAGE_WIDTH, IMAGE_LFOV_DEG)
-
-
-            #ROI_WIDTH #TODO
-            #bbox_roi = bbox*(np.array(bbox) > 0)
-            #d = np.percentile(dep_img[int(bbox_roi[1]):int(bbox_roi[1]+bbox_roi[3]), int(bbox_roi[0]):int(bbox_roi[0]+bbox_roi[2])], BBOX_QMIN)
-
-            a = 1#((bbox_roi[0] + bbox_roi[2]//2) - IMAGE_WIDTH//2) * IMAGE_LFOV_DEG / IMAGE_WIDTH
         else:
             d = None
             a = None
