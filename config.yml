@@ -7,7 +7,8 @@ project:
   display_window: True
   lcd_monitor: True
   enable_ui_input: True
-  enable_adam_signal: False
+  enable_d_signal: False
+  enable_a_signal: False
 
 video:
   clip_limit: 3.5
@@ -34,8 +35,8 @@ model:
   conf_thr: 0.2
 
 gpio:
-  byte0: 15
-  byte1: 16
+  byte0: 16
+  byte1: 15
   safety_light: 26
 
 serial: # sudo chmod a+rw /dev/ttyUSB0

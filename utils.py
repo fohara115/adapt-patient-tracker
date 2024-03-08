@@ -5,15 +5,25 @@ import os.path
 import sys
 import getopt
 import time
+import Jetson.GPIO as GPIO
 from datetime import datetime
 
 # Overall, needs to be neatened
 
-def read_gpio_state(B0_PIN, B1_PIN)
+def read_gpio_state(B0_PIN, B1_PIN):
     b0 = GPIO.input(B0_PIN)
     b1 = GPIO.input(B1_PIN)
 
-    print(f"b0: {b0}     b1:  {b1}")
+    if b1==0 and b0==0:
+        return 0
+    elif b1==0 and b0==1:
+        return 1
+    elif b1==1 and b0==0:
+        return 2
+    elif b1==1 and b0==1:
+        return 3
+    else:
+        return None
 
 
 def update_lcd_board_state(lcd_monitor, ui_state):
@@ -21,7 +31,33 @@ def update_lcd_board_state(lcd_monitor, ui_state):
         lcd_monitor.write(f"S1\n".encode('utf-8'))
     else:
         lcd_monitor.write(f"S2\n".encode('utf-8'))
-    
+
+def send_d_signal(d_port, d, ui_state, tracker_init, missing):
+
+    d_value = np.round(d,3) if d else d
+    if (not tracker_init):
+        state = 1
+    elif (ui_state == 0):
+        state = 1
+    elif (missing):
+        state = 3
+    else:
+        state = 2
+    d_port.write(f"1,{d_value},{state},{ui_state}\n".encode('utf-8'))
+
+def send_a_signal(a_port, a, ui_state, tracker_init, missing):
+
+    a_value = np.round(a,1) if a else a
+    if (not tracker_init):
+        state = 1
+    elif (ui_state == 0):
+        state = 1
+    elif (missing):
+        state = 3
+    else:
+        state = 2
+    a_port.write(f"2,{a_value},{state},{ui_state}\n".encode('utf-8'))
+
 
 def send_adam_signals(d_port, a_port, d, a, ui_state, tracker_init, missing):
     'Send two ports to adam'
@@ -30,7 +66,7 @@ def send_adam_signals(d_port, a_port, d, a, ui_state, tracker_init, missing):
     a_value = np.round(a,3) if a else a
     if (not tracker_init):
         state = 1
-    elif (ui_state == 0)
+    elif (ui_state == 0):
         state = 1
     elif (missing):
         state = 3

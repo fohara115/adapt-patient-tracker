@@ -26,7 +26,8 @@ DEFAULT_VID = cfg['input']['default']
 DISP = cfg['project']['display_window']
 ENABLE_LCD = cfg['project']['lcd_monitor']
 ENABLE_UI_INPUT = cfg['project']['enable_ui_input']
-ENABLE_ADAM_SIG = cfg['project']['enable_adam_signal']
+ENABLE_D_SIG = cfg['project']['enable_d_signal']
+ENABLE_A_SIG = cfg['project']['enable_a_signal']
 CLIP_DIST = cfg['video']['clip_limit']
 IMAGE_HEIGHT = cfg['video']['img_height']
 IMAGE_WIDTH = cfg['video']['img_width']
@@ -129,9 +130,9 @@ try:
     while True:
 
         # Get UI Input
-        ui_state = DEF_UI_STATE # TODO
-        utils.read_gpio_state(B0_PIN, B1_PIN)
-        # TODO: Update LCD state. utils.update_lcd_board_state()
+        ui_state = utils.read_gpio_state(B0_PIN, B1_PIN)
+        if ENABLE_LCD:
+            utils.update_lcd_board_state(lcd_monitor, ui_state)
 
         # Check E-Stop
         if ENABLE_LCD:
@@ -201,8 +202,11 @@ try:
                 lcd_monitor.write(f"Patient Seated\n".encode('utf-8'))
 
         # Write Motor Signals
-        if ENABLE_ADAM_SIG:
-            utils.send_adam_signals(d_port, a_port, d, a, ui_state, tracker_init, missing)
+        if ENABLE_D_SIG:
+            utils.send_d_signals(d_port, d, ui_state, tracker_init, missing)
+
+        if ENABLE_A_SIG:
+            utils.send_a_signals(a_port, a, ui_state, tracker_init, missing)
 
         # Display Window
         if DISP:
@@ -241,6 +245,9 @@ finally:
     pipeline.stop()
     if ENABLE_LCD:
         lcd_monitor.close()
-    if ENABLE_MOTOR_SIG:
-        motor_port.close()
+    if ENABLE_D_SIG:
+        d_port.close()
+    if ENABLE_A_SIG:
+        a_port.close()
+
 
