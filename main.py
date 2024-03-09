@@ -185,6 +185,7 @@ try:
             num_people = len(clss)
             if num_people == 0:
                 missing = True
+                ret = False
             elif (num_people > 0) and missing:
                 #if np.sum(bbox) != 0:
                 missing = False
@@ -203,16 +204,8 @@ try:
 
         # Write LCD Feedback
         if ENABLE_LCD:
-            if missing:
-                lcd_monitor.write(f"Patient Missing\n".encode('utf-8'))
-            elif tracker_init:
-                if d and a:
-                    lcd_monitor.write(f"{np.round(d,2)} m,{np.round(a,0)} deg\n".encode('utf-8'))
-                else:
-                    lcd_monitor.write(f"{d} m,{a} deg\n".encode('utf-8'))
-            else: 
-                lcd_monitor.write(f"Patient Seated\n".encode('utf-8'))
-
+            utils.update_lcd_display(lcd_monitor, tracker_init, d, a, missing, ui_state, fps)
+            
         # Write Motor Signals
         if ENABLE_D_SIG:
             utils.send_d_signals(d_port, d, ui_state, tracker_init, missing)
@@ -244,7 +237,7 @@ try:
         # Write Log File
         if WRITE_OUTPUT:
             if tracker_init:
-                if bbox:
+                if ret and bbox:
                     with open(output_dir, "a") as f:
                        print(f"{t},{ui_state},{int(not tracker_init)},{d},{a},{fps},{bbox}", file=f)
             else:

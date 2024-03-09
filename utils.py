@@ -10,6 +10,26 @@ from datetime import datetime
 
 # Overall, needs to be neatened
 
+def update_lcd_display(lcd_monitor, tracker_init, d, a, missing, ui_state, fps):
+    # LINE1
+    if ui_state == 0:
+        s = 1
+    elif missing:
+        s = 3
+    else:
+        s = 2
+    lcd_monitor.write(f"ADAPT ({s},{int(tracker_init)}) {int(np.round(fps, 0))}Hz\n".encode('utf-8'))
+    
+    if tracker_init and d and a:
+        d_value = int(np.round(d*100, 0)) if d else d
+        a_value = int(np.round(a,0)) if a else a
+    else:
+        d_value = ' ---'
+        a_value = ' ---'
+
+    msg = "d:"+f"{d_value}".rjust(4) + "cm a:" + f"{a_value}".rjust(3) + "\n"
+    lcd_monitor.write(msg.encode('utf-8'))
+
 
 def full_height_box(bbox, img_h, img_w, width=200):
     center_x = int(bbox[0] + bbox[2]//2)

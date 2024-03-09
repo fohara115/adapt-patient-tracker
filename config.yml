@@ -5,7 +5,7 @@ input:
 
 project:
   display_window: True
-  lcd_monitor: False
+  lcd_monitor: True
   enable_ui_input: False
   enable_d_signal: False
   enable_a_signal: False
