@@ -22,8 +22,8 @@ parameters:
   init_ui_state: 1
 
 tracker:
-  type: 'MIL'
-  bbox_height: 150
+  type: 'CSRT'
+  bbox_height: 460
   bbox_width: 200
   bbox_qmin: 15
   

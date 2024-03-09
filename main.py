@@ -80,7 +80,7 @@ elif TRACKER_TYPE=='MIL':
     tracker = cv2.TrackerMIL_create()
 else:
     raise(f'ERROR: Provided tracker type {TRACKER_TYPE} is not supported in this project.')
-init_bbox = (IMAGE_WIDTH//2 - (BBOX_WIDTH//2), IMAGE_HEIGHT//2 - (BBOX_HEIGHT//2), BBOX_HEIGHT, BBOX_WIDTH)
+init_bbox = (IMAGE_WIDTH//2 - (BBOX_WIDTH//2), IMAGE_HEIGHT//2 - (BBOX_HEIGHT//2), BBOX_WIDTH, BBOX_HEIGHT)
 tracker_init = False
 missing = False
 
