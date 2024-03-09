@@ -38,7 +38,9 @@ DEF_UI_STATE = cfg['parameters']['init_ui_state']
 TRACKER_TYPE = cfg['tracker']['type']
 BBOX_HEIGHT = cfg['tracker']['bbox_height']
 BBOX_WIDTH = cfg['tracker']['bbox_width']
+ROI_WIDTH = cfg['tracker']['roi_width']
 BBOX_QMIN = cfg['tracker']['bbox_qmin']
+BBOX_MIN = cfg['tracker']['bbox_min']
 MODEL = cfg['model']['name']
 CAT_NUM = cfg['model']['cat_num']
 PERSON_CLASS = cfg['model']['person_label']
@@ -195,9 +197,16 @@ try:
 
         # Calculate Signals of Interest
         if tracker_init and ret and bbox and not missing:
-            bbox_roi = bbox*(np.array(bbox) > 0)
-            d = np.percentile(dep_img[int(bbox_roi[1]):int(bbox_roi[1]+bbox_roi[3]), int(bbox_roi[0]):int(bbox_roi[0]+bbox_roi[2])], BBOX_QMIN)
-            a = ((bbox_roi[0] + bbox_roi[2]//2) - IMAGE_WIDTH//2) * IMAGE_LFOV_DEG / IMAGE_WIDTH
+            p1, p2 = utils.full_height_box(bbox, IMAGE_HEIGHT, IMAGE_WIDTH, width=ROI_WIDTH)
+            d = utils.calculate_dist_from_roi(dep_img, p1, p2, BBOX_MIN, BBOX_QMIN)
+            a = utils.calculate_ang(p1, p2, IMAGE_WIDTH, IMAGE_LFOV_DEG)
+
+
+            #ROI_WIDTH #TODO
+            #bbox_roi = bbox*(np.array(bbox) > 0)
+            #d = np.percentile(dep_img[int(bbox_roi[1]):int(bbox_roi[1]+bbox_roi[3]), int(bbox_roi[0]):int(bbox_roi[0]+bbox_roi[2])], BBOX_QMIN)
+
+            a = 1#((bbox_roi[0] + bbox_roi[2]//2) - IMAGE_WIDTH//2) * IMAGE_LFOV_DEG / IMAGE_WIDTH
         else:
             d = None
             a = None
@@ -221,7 +230,7 @@ try:
                     p1 = (int(bbox[0]), int(bbox[1]))
                     p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
                     cv2.rectangle(img, p1, p2, (255,0,0), 2, 1)
-                    p1, p2 = utils.full_height_box(bbox, IMAGE_HEIGHT, IMAGE_WIDTH)
+                    p1, p2 = utils.full_height_box(bbox, IMAGE_HEIGHT, IMAGE_WIDTH, width=ROI_WIDTH)
                     cv2.rectangle(img, p1, p2, (0,0,255), 2, 1)
                 img = show_fps(img, fps)
                 cv2.imshow('RealSense Sensors', img)

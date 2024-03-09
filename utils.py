@@ -10,6 +10,27 @@ from datetime import datetime
 
 # Overall, needs to be neatened
 
+def calculate_ang(p1, p2, img_w, conversion):
+    return ((p1[0] + p2[0]//2) - img_w//2) * conversion / img_w
+
+
+
+
+def calculate_dist_from_roi(dep_img, p1, p2, bbmin, qmin):
+    roi = dep_img[p1[0]:p2[0], p1[1]:p2[1]]
+    filt = roi[roi > bbmin]
+    if filt.size > 0:
+        return np.percentile(filt, qmin)
+    else:
+        return None
+
+    #print(roi.shape)
+    #cv2.destroyAllWindows()
+    #cv2.imshow('New', roi)
+    #cv2.waitKey()
+    #time.sleep(15)
+
+
 def update_lcd_display(lcd_monitor, tracker_init, d, a, missing, ui_state, fps):
     # LINE1
     if ui_state == 0:
@@ -121,7 +142,7 @@ def send_adam_signals(d_port, a_port, d, a, ui_state, tracker_init, missing):
 def update_fps(fps, tic):
     toc = time.time()
     curr_fps = 1.0 / (toc - tic)
-    fps = curr_fps if fps == 0.0 else (fps*0.95 + curr_fps*0.05)
+    fps = curr_fps if fps == 0.0 else (fps*0.5 + curr_fps*0.5)
     return fps, toc
 
 def process_cli_args(iroot, oroot, default, live):
