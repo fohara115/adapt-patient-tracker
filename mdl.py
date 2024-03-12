@@ -39,6 +39,16 @@ align = rs.align(rs.stream.color)
 fps = 0
 
 
+hess_thresh = 500
+surf = cv2.xfeatures2d.SURF_create(hess_thresh)
+surf.setUpright(False)
+
+#bf = cv2.BFMatcher(cv2.NORM_L1, crossCheck = True)
+#surf.setContrastThreshold(0.25)
+#surf.setEdgeThreshold(5)
+matcher = cv2.DescriptorMatcher_create(cv2.DescriptorMatcher_BRUTEFORCE_HAMMING)
+
+first = True
 
 # ----- MAIN LOOP -----
 
@@ -56,15 +66,20 @@ try:
         boxes, confs, clss = trt_yolo.detect(col_img, CONF_THRESH)
         boxes, confs, clss = boxes[clss==PERSON_CLASS], confs[clss==PERSON_CLASS], clss[clss==PERSON_CLASS]
 
-        #for b in boxes:
-        ii = integral_image(col_img)
-        ii = np.sum(ii, axis=2)
-        print(ii.shape)
-        f = haar_like_feature(ii, 10, 10, 10, 10)
-        print(f.shape)
+        if first:
+            kp_i, des_i = surf.detectAndCompute(col_img, None)
+            first = False
+
+        kp, des = surf.detectAndCompute(col_img, None)
+        #kp, des = surf.compute(col_img, kp)
+        #matches = bf.match(des_i, des)
+        nn_matches = matcher.knnMatch(des_i, des, 2)
+        
+        #print(len(kp))
 
         img = vis.draw_bboxes(col_img, boxes, confs, clss)
         img = show_fps(img, fps)
+        img = cv2.drawKeypoints(img, kp, None, (255,0,0), 4)
         cv2.imshow('RealSense Sensors', img)
          
 
