@@ -39,14 +39,16 @@ align = rs.align(rs.stream.color)
 fps = 0
 
 
-hess_thresh = 500
+hess_thresh = 5000
 surf = cv2.xfeatures2d.SURF_create(hess_thresh)
 surf.setUpright(False)
 
 #bf = cv2.BFMatcher(cv2.NORM_L1, crossCheck = True)
 #surf.setContrastThreshold(0.25)
 #surf.setEdgeThreshold(5)
-matcher = cv2.DescriptorMatcher_create(cv2.DescriptorMatcher_BRUTEFORCE_HAMMING)
+index_params = dict(algorithm=1, trees=5)
+search_params = dict(checks=50)
+matcher = cv2.FlannBasedMatcher(index_params, search_params)
 
 first = True
 
@@ -67,13 +69,20 @@ try:
         boxes, confs, clss = boxes[clss==PERSON_CLASS], confs[clss==PERSON_CLASS], clss[clss==PERSON_CLASS]
 
         if first:
-            kp_i, des_i = surf.detectAndCompute(col_img, None)
+            kp, des = surf.detectAndCompute(col_img, None)
             first = False
 
+        
+        kp_prev, des_prev = kp, des
         kp, des = surf.detectAndCompute(col_img, None)
         #kp, des = surf.compute(col_img, kp)
         #matches = bf.match(des_i, des)
-        nn_matches = matcher.knnMatch(des_i, des, 2)
+        nn_matches = matcher.knnMatch(des_prev, des, 2)
+        num_match = 0
+        for i,(m,n) in enumerate(nn_matches):
+            if m.distance < 0.7*n.distance:
+                num_match = num_match + 1
+        print(f"{num_match} / {len(kp)}")
         
         #print(len(kp))
 
