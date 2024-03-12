@@ -10,6 +10,7 @@ import utils
 import yaml
 
 from skimage.feature import haar_like_feature
+from skimage.transform import integral_image
 
 from trt_utils.yolo_classes import get_cls_dict
 from trt_utils.camera import add_camera_args, Camera
@@ -55,9 +56,12 @@ try:
         boxes, confs, clss = trt_yolo.detect(col_img, CONF_THRESH)
         boxes, confs, clss = boxes[clss==PERSON_CLASS], confs[clss==PERSON_CLASS], clss[clss==PERSON_CLASS]
 
-        for b in boxes:
-            f = haar_like_feature(col_img, b[0], b[1], b[2], b[3])
-            print(f)
+        #for b in boxes:
+        ii = integral_image(col_img)
+        ii = np.sum(ii, axis=2)
+        print(ii.shape)
+        f = haar_like_feature(ii, 10, 10, 10, 10)
+        print(f.shape)
 
         img = vis.draw_bboxes(col_img, boxes, confs, clss)
         img = show_fps(img, fps)
