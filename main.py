@@ -254,7 +254,7 @@ try:
                 des_p = best_des
                 patient_bbox = boxes[best_i]
 
-          'IDEAS: bbox area feature, custom knn, '
+          #'''IDEAS: bbox area feature, custom knn, '''
             
 
 

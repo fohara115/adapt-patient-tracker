@@ -1,7 +1,7 @@
 input:
   live_feed: False
   root: '/media/fohara/645E941F5E93E856/bme/data/'
-  default: '20231124_163447.bag'
+  default: '20240210_113928.bag'
 
 project:
   display_window: True
