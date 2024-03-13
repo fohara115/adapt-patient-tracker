@@ -10,10 +10,12 @@ from datetime import datetime
 
 # Overall, needs to be neatened
 
+def cut_bbox(img, bbox):
+    return img[bbox[1]:bbox[1]+bbox[3], bbox[0]:bbox[0]+bbox[2]]
+
+
 def calculate_ang(p1, p2, img_w, conversion):
     return ((p1[0] + p2[0]//2) - img_w//2) * conversion / img_w
-
-
 
 
 def calculate_dist_from_roi(dep_img, p1, p2, bbmin, qmin):

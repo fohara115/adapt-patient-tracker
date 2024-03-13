@@ -61,10 +61,6 @@ input_dir, output_dir = utils.process_cli_args(iroot=INPUT_ROOT, oroot=OUTPUT_RO
 if not LIVE_FEED:
     print(f"{input_dir}...")
 
-print('Delaying to switch ports...')
-time.sleep(2)
-print('Beginning')
-
 
 
 # ----- DETECTOR SETUP -----
@@ -133,6 +129,20 @@ t_prev = 0
 
 
 
+# ----- SURF SETUP -----
+
+hess_thresh = 1000
+surf = cv2.xfeatures2d.SURF_create(hess_thresh)
+surf.setUpright(False)
+index_params = dict(algorithm=1, trees=5)
+search_params = dict(checks=200)
+matcher = cv2.FlannBasedMatcher(index_params, search_params)
+#matcher = cv2.BFMatcher()
+init_patient_bbox = (IMAGE_WIDTH//2 - (BBOX_WIDTH//2), IMAGE_HEIGHT//2 - (BBOX_HEIGHT//2), IMAGE_WIDTH//2 + (BBOX_WIDTH//2), IMAGE_HEIGHT//2 + (BBOX_HEIGHT//2))
+
+
+
+
 # ----- MAIN LOOP -----
 
 try:
@@ -174,21 +184,87 @@ try:
 
         # Mask Colour Images
         depth_mask = utils.depth_masking(dep_img, clip_dist=CLIP_DIST)
-        person_mask = utils.person_masking(boxes, image_height=IMAGE_HEIGHT, image_width=IMAGE_WIDTH)
-        per_img = col_img*np.where(person_mask+prev_mask1+prev_mask2>0, True, False)*depth_mask
-        prev_mask1 = person_mask
-        prev_mask2 = prev_mask1
+        fimg = col_img*depth_mask
 
         # Switch Tracker On/Off From Center Distance
         center_dist = utils.get_center_distance(dep_img)
         if (center_dist > DIST_THRESH) and (not tracker_init):
             tracker_init = True 
-            ret = tracker.init(per_img, init_bbox)
+            while True:
+                kp_p, des_p = surf.detectAndCompute(utils.cut_bbox(col_img,init_patient_bbox), None)
+                if len(kp_p)>0:
+                    break
+            #print(des_p)
+            #print(des_p.shape)
+            #print(type(des_p))
+            patient_bbox = init_patient_bbox
+            '''print(len(kp_p))
+            print(des_p)
+            print(des_p[0])
+            img = vis.draw_bboxes(utils.cut_bbox(col_img,init_patient_bbox), boxes, confs, clss)
+            img = show_fps(img, fps)
+            img = cv2.drawKeypoints(img, kp_p, None, (255,0,0), 4)
+            cv2.imshow('RealSense Sensors', img)
+            key = cv2.waitKey(1)
+            if key & 0xFF == ord('q') or key == 27:
+                break
+            time.sleep(20)
+            break'''
+          
         elif (center_dist < DIST_THRESH) and (tracker_init) and (center_dist > 1e-6):
             tracker_init = False
 
+
+      
         # Update Tracker if Person is Detected
-        if tracker_init:
+        if tracker_init and (len(clss) > 0) and len(kp_p) > 0 and len(boxes)>0:
+            best = 0
+            best_i = None
+            best_kp = None
+            best_des = None
+            for i, b in enumerate(boxes):
+                roi = utils.cut_bbox(col_img,b)
+                kp, des = surf.detectAndCompute(roi, None)
+                if abs(len(kp) - len(kp_p)) < 120:
+                    if (des_p is None) or (des is None):
+                        continue
+
+                    if (len(des_p) < 3) or (len(des) < 3):
+                        continue
+                    #print(f"{des_p.shape}   {des.shape}")
+                    
+                    nn_matches = matcher.knnMatch(des_p, des, 2)
+                
+                    num_match = 0
+                    for m,n in nn_matches:
+                        if m.distance < 0.7*n.distance:
+                            num_match = num_match + 1
+                    score = num_match/len(kp_p)
+
+                    if (score >= best):
+                        best = score
+                        best_i = i
+                        best_kp = kp
+                        best_des = des
+
+            #update 
+            if best_kp is not None:
+                #print(f"kpp{len(kp_p)}, kp{len(best_kp)}, {best}")
+                kp_p = best_kp 
+                des_p = best_des
+                patient_bbox = boxes[best_i]
+
+          'IDEAS: bbox area feature, custom knn, '
+            
+
+
+                  
+
+
+
+
+
+        '''if tracker_init:
             num_people = len(clss)
             if num_people == 0:
                 missing = True
@@ -198,16 +274,16 @@ try:
                 missing = False
                 ret, bbox = tracker.update(per_img)
             else:
-                ret, bbox = tracker.update(per_img)
+                ret, bbox = tracker.update(per_img)'''
 
         # Calculate Signals of Interest
-        if tracker_init and ret and bbox and not missing:
+        '''if tracker_init and ret and bbox and not missing:
             p1, p2 = utils.full_height_box(bbox, IMAGE_HEIGHT, IMAGE_WIDTH, width=ROI_WIDTH)
             d = utils.calculate_dist_from_roi(dep_img, p1, p2, BBOX_MIN, BBOX_QMIN)
             a = utils.calculate_ang(p1, p2, IMAGE_WIDTH, IMAGE_LFOV_DEG)
-        else:
-            d = None
-            a = None
+        else:'''
+        d = None
+        a = None
 
         # Write LCD Feedback
         if ENABLE_LCD:
@@ -222,20 +298,12 @@ try:
 
         # Display Window
         if DISP:
-            if tracker_init:
-                img = vis.draw_bboxes(per_img, boxes, confs, clss)
-                if ret and bbox and not missing:
-                    p1 = (int(bbox[0]), int(bbox[1]))
-                    p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-                    cv2.rectangle(img, p1, p2, (255,0,0), 2, 1)
-                    p1, p2 = utils.full_height_box(bbox, IMAGE_HEIGHT, IMAGE_WIDTH, width=ROI_WIDTH)
-                    cv2.rectangle(img, p1, p2, (0,0,255), 2, 1)
-                img = show_fps(img, fps)
-                cv2.imshow('RealSense Sensors', img)
-            else:
-                img = vis.draw_bboxes(col_img, boxes, confs, clss)
-                img = show_fps(img, fps)
-                cv2.imshow('RealSense Sensors', img)
+            img = vis.draw_bboxes(col_img, boxes, confs, clss)
+            img = show_fps(img, fps)
+            if tracker_init and (len(clss) > 0) and len(kp_p) > 0:
+                #img = cv2.drawKeypoints(img, kp_p, None, (255,0,0), 4)
+                img = cv2.rectangle(img, (patient_bbox[0], patient_bbox[1]), (patient_bbox[2], patient_bbox[3]), (0, 0, 255), 5)
+            cv2.imshow('RealSense Sensors', img)
 
             key = cv2.waitKey(1)
             if key & 0xFF == ord('q') or key == 27:

@@ -46,10 +46,10 @@ surf.setUpright(False)
 #bf = cv2.BFMatcher(cv2.NORM_L1, crossCheck = True)
 #surf.setContrastThreshold(0.25)
 #surf.setEdgeThreshold(5)
+
 index_params = dict(algorithm=1, trees=5)
 search_params = dict(checks=50)
 matcher = cv2.FlannBasedMatcher(index_params, search_params)
-
 first = True
 
 # ----- MAIN LOOP -----
