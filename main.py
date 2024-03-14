@@ -147,9 +147,12 @@ init_patient_bbox = (IMAGE_WIDTH//2 - (BBOX_WIDTH//2), IMAGE_HEIGHT//2 - (BBOX_H
 X = deque()
 poptime = 0
 pop_period = 500 #ms
-max_x =  np.array([1,1,1,1,1,1,1,1,1,1,1,1])#np.array([360, 7e5, 255, 255, 255])
+#max_x =  np.array([1,1,1,1,1,1,1,1,1])#np.array([360, 7e5, 255, 255, 255])
+max_x =  np.array([500,500**2,600,700,600*700,600,200,200,200])
 queue_len = 5
 #scaler = StandardScaler()
+
+orb = cv2.ORB_create()
 
 
 
@@ -202,7 +205,7 @@ try:
         center_dist = utils.get_center_distance(dep_img)
         if (center_dist > DIST_THRESH) and (not tracker_init):
             tracker_init = True 
-            x1 = utils.get_features(surf, fimg, init_patient_bbox)
+            x1 = utils.get_features_v2(orb, fimg, init_patient_bbox)
             for _ in range(queue_len):
                 X.appendleft(x1)
 
@@ -220,13 +223,13 @@ try:
             best_i = None
             best_x = None
             for i, b in enumerate(boxes):
-                x = utils.get_features(surf, fimg, b)
+                x = utils.get_features_v2(orb, fimg, b)
                 sx = x / max_x
                 total_d = 0
                 for xv in X:
                     dist = distance.cosine(xv / max_x, sx)
                     total_d = total_d + dist
-                print(f"{np.round(total_d, 4)}:  {x}")
+                print(f"{np.round(total_d, 4)}:  {sx}")
 
                 if total_d <= best_d:
                     best_d = total_d

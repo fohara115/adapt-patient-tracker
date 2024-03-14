@@ -10,6 +10,22 @@ from datetime import datetime
 
 # Overall, needs to be neatened
 
+def get_features_v2(orb, img, bbox):
+    roi = cut_bbox(img, bbox)
+    kp = orb.detect(cv2.cvtColor(roi, cv2.COLOR_RGB2GRAY), None)
+    
+    return np.array([
+        len(kp),
+        len(kp)*len(kp),
+        bbox[2],
+        bbox[3],
+        bbox[2]*bbox[3],
+        bbox[1],
+        np.round(np.mean(roi[:,:,0])),
+        np.round(np.mean(roi[:,:,1])),
+        np.round(np.mean(roi[:,:,2]))
+    ])
+
 def get_features(surf, img, bbox):
     roi = cut_bbox(img, bbox)
     kp = surf.detect(roi, None)
