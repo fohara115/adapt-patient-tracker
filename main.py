@@ -9,6 +9,10 @@ import time
 import utils
 import yaml
 
+from collections import deque
+#from sklearn.preprocessing import StandardScaler
+from scipy.spatial import distance
+
 from trt_utils.yolo_classes import get_cls_dict
 from trt_utils.camera import add_camera_args, Camera
 from trt_utils.display import open_window, set_display, show_fps
@@ -131,14 +135,21 @@ t_prev = 0
 
 # ----- SURF SETUP -----
 
-hess_thresh = 1000
+hess_thresh = 4500
 surf = cv2.xfeatures2d.SURF_create(hess_thresh)
 surf.setUpright(False)
-index_params = dict(algorithm=1, trees=5)
-search_params = dict(checks=200)
-matcher = cv2.FlannBasedMatcher(index_params, search_params)
+#index_params = dict(algorithm=1, trees=5)
+#search_params = dict(checks=200)
+#matcher = cv2.FlannBasedMatcher(index_params, search_params)
 #matcher = cv2.BFMatcher()
 init_patient_bbox = (IMAGE_WIDTH//2 - (BBOX_WIDTH//2), IMAGE_HEIGHT//2 - (BBOX_HEIGHT//2), IMAGE_WIDTH//2 + (BBOX_WIDTH//2), IMAGE_HEIGHT//2 + (BBOX_HEIGHT//2))
+
+X = deque()
+poptime = 0
+pop_period = 1000 #ms
+max_x = np.array([300, 4e5, 255, 255, 255])
+#scaler = StandardScaler()
+
 
 
 
@@ -190,10 +201,18 @@ try:
         center_dist = utils.get_center_distance(dep_img)
         if (center_dist > DIST_THRESH) and (not tracker_init):
             tracker_init = True 
-            while True:
-                kp_p, des_p = surf.detectAndCompute(utils.cut_bbox(col_img,init_patient_bbox), None)
-                if len(kp_p)>0:
-                    break
+            x1 = utils.get_features(surf, fimg, init_patient_bbox)
+            sx1 = x1 / max_x
+            X.appendleft(sx1)
+            X.appendleft(sx1)
+            X.appendleft(sx1)
+            X.appendleft(sx1)
+            X.appendleft(sx1)
+            centroid = np.mean(np.array(X), axis=0)
+            #while True:
+            #    kp_p, des_p = surf.detectAndCompute(utils.cut_bbox(fimg,init_patient_bbox), None)
+            #    if len(kp_p)>0:
+            #        break
             #print(des_p)
             #print(des_p.shape)
             #print(type(des_p))
@@ -217,15 +236,34 @@ try:
 
       
         # Update Tracker if Person is Detected
-        if tracker_init and (len(clss) > 0) and len(kp_p) > 0 and len(boxes)>0:
-            best = 0
+        if tracker_init and (len(clss) > 0) and len(boxes)>0:
+            best_d = 100
             best_i = None
-            best_kp = None
-            best_des = None
+            best_x = None
             for i, b in enumerate(boxes):
-                roi = utils.cut_bbox(col_img,b)
-                kp, des = surf.detectAndCompute(roi, None)
-                if abs(len(kp) - len(kp_p)) < 120:
+                x = utils.get_features(surf, fimg, b)
+                sx = x / max_x
+                dist = distance.euclidean(centroid, sx)
+
+                if dist <= best_d:
+                    best_d = dist
+                    best_i = i
+                    best_sx = sx
+            
+            print(f"best_i: {best_i}")
+            patient_bbox = boxes[best_i]
+
+
+            if (t - poptime > pop_period):
+                print('update')
+                X.pop()
+                X.appendleft(best_sx)
+                centroid = np.mean(np.array(X), axis=0)
+                poptime = t
+
+                
+
+            '''if abs(len(kp) - len(kp_p)) < 120:
                     if (des_p is None) or (des is None):
                         continue
 
@@ -245,14 +283,14 @@ try:
                         best = score
                         best_i = i
                         best_kp = kp
-                        best_des = des
+                        best_des = des'''
 
             #update 
-            if best_kp is not None:
+            '''if best_kp is not None:
                 #print(f"kpp{len(kp_p)}, kp{len(best_kp)}, {best}")
                 kp_p = best_kp 
                 des_p = best_des
-                patient_bbox = boxes[best_i]
+                patient_bbox = boxes[best_i]'''
 
           #'''IDEAS: bbox area feature, custom knn, '''
             
@@ -300,7 +338,7 @@ try:
         if DISP:
             img = vis.draw_bboxes(col_img, boxes, confs, clss)
             img = show_fps(img, fps)
-            if tracker_init and (len(clss) > 0) and len(kp_p) > 0:
+            if tracker_init and (len(clss) > 0):
                 #img = cv2.drawKeypoints(img, kp_p, None, (255,0,0), 4)
                 img = cv2.rectangle(img, (patient_bbox[0], patient_bbox[1]), (patient_bbox[2], patient_bbox[3]), (0, 0, 255), 5)
             cv2.imshow('RealSense Sensors', img)
@@ -331,5 +369,9 @@ finally:
         d_port.close()
     if ENABLE_A_SIG:
         a_port.close()
+
+    while len(X)>0:
+        X.pop()
+    del X
 
 

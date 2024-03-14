@@ -10,6 +10,20 @@ from datetime import datetime
 
 # Overall, needs to be neatened
 
+def get_features(surf, img, bbox):
+    roi = cut_bbox(img, bbox)
+    kp = surf.detect(roi, None)
+    
+    return np.array([
+        len(kp),
+        bbox[2]*bbox[3],
+        np.round(np.mean(roi[:,:,0])),
+        np.round(np.mean(roi[:,:,1])),
+        np.round(np.mean(roi[:,:,2]))
+    ])
+
+
+
 def cut_bbox(img, bbox):
     return img[bbox[1]:bbox[1]+bbox[3], bbox[0]:bbox[0]+bbox[2]]
 
