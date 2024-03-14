@@ -147,7 +147,7 @@ init_patient_bbox = (IMAGE_WIDTH//2 - (BBOX_WIDTH//2), IMAGE_HEIGHT//2 - (BBOX_H
 X = deque()
 poptime = 0
 pop_period = 500 #ms
-max_x = np.array([360, 4e5, 155, 155, 155])
+max_x =  np.array([1,1,1,1,1,1,1,1,1,1,1,1])#np.array([360, 7e5, 255, 255, 255])
 queue_len = 5
 #scaler = StandardScaler()
 
@@ -222,11 +222,14 @@ try:
             for i, b in enumerate(boxes):
                 x = utils.get_features(surf, fimg, b)
                 sx = x / max_x
-                dist = distance.euclidean(centroid, sx)
-                print(f"{np.round(dist, 4)}:  {sx}")
+                total_d = 0
+                for xv in X:
+                    dist = distance.cosine(xv / max_x, sx)
+                    total_d = total_d + dist
+                print(f"{np.round(total_d, 4)}:  {x}")
 
-                if dist <= best_d:
-                    best_d = dist
+                if total_d <= best_d:
+                    best_d = total_d
                     best_i = i
                     best_x = x
             
@@ -237,7 +240,7 @@ try:
                 print('update')
                 X.pop()
                 X.appendleft(best_x)
-                centroid = np.mean(np.array(X) / max_x, axis=0)
+                #centroid = np.mean(np.array(X) / max_x, axis=0)
                # max_x = np.max(np.array(X), axis=0)
                 print(max_x)
                 poptime = t

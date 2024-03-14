@@ -16,10 +16,17 @@ def get_features(surf, img, bbox):
     
     return np.array([
         len(kp),
+        len(kp)*len(kp),
+        bbox[2],
+        bbox[3],
         bbox[2]*bbox[3],
+        bbox[1],
         np.round(np.mean(roi[:,:,0])),
         np.round(np.mean(roi[:,:,1])),
-        np.round(np.mean(roi[:,:,2]))
+        np.round(np.mean(roi[:,:,2])),
+        np.round(np.max(roi[:,:,0])),
+        np.round(np.max(roi[:,:,1])),
+        np.round(np.max(roi[:,:,2]))
     ])
 
 
