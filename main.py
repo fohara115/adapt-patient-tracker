@@ -39,12 +39,17 @@ IMAGE_CHANNELS = cfg['video']['img_channels']
 IMAGE_LFOV_DEG = cfg['video']['img_wide_fov_deg']
 DIST_THRESH = cfg['parameters']['seated_trigger']
 DEF_UI_STATE = cfg['parameters']['init_ui_state']
-TRACKER_TYPE = cfg['tracker']['type']
-BBOX_HEIGHT = cfg['tracker']['bbox_height']
+
+MAX_ARR = cfg['tracker']['max_arr']
 BBOX_WIDTH = cfg['tracker']['bbox_width']
-ROI_WIDTH = cfg['tracker']['roi_width']
+BBOX_HEIGHT = cfg['tracker']['bbox_height']
+POP_PER = cfg['tracker']['pop_period']
+QUEUE_LEN = cfg['tracker']['queue_length']
+NFEAT = cfg['tracker']['orb_feats']
+BBOX_MIN = cfg['tracker']['bbox_min']
 BBOX_QMIN = cfg['tracker']['bbox_qmin']
 BBOX_MIN = cfg['tracker']['bbox_min']
+
 MODEL = cfg['model']['name']
 CAT_NUM = cfg['model']['cat_num']
 PERSON_CLASS = cfg['model']['person_label']
@@ -79,17 +84,13 @@ prev_mask2 = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS), np.uint8)
 
 # ----- TRACKER SETUP -----
 
-if TRACKER_TYPE=='CSRT':
-    tracker = cv2.TrackerCSRT_create()
-elif TRACKER_TYPE=='KCF':
-    tracker = cv2.TrackerKCF_create()
-elif TRACKER_TYPE=='MIL':
-    tracker = cv2.TrackerMIL_create()
-else:
-    raise(f'ERROR: Provided tracker type {TRACKER_TYPE} is not supported in this project.')
-init_bbox = (IMAGE_WIDTH//2 - (BBOX_WIDTH//2), IMAGE_HEIGHT//2 - (BBOX_HEIGHT//2), BBOX_WIDTH, BBOX_HEIGHT)
+X = deque()
+max_x =  np.array(MAX_ARR)
+orb = cv2.ORB_create(nfeatures=NFEAT)
 tracker_init = False
 missing = False
+poptime = 0
+init_patient_bbox = (IMAGE_WIDTH//2 - (BBOX_WIDTH//2), IMAGE_HEIGHT//2 - (BBOX_HEIGHT//2), IMAGE_WIDTH//2 + (BBOX_WIDTH//2), IMAGE_HEIGHT//2 + (BBOX_HEIGHT//2))
 
 
 
@@ -133,35 +134,6 @@ t_prev = 0
 
 
 
-# ----- SURF SETUP -----
-
-hess_thresh = 1000
-surf = cv2.xfeatures2d.SURF_create(hess_thresh)
-surf.setUpright(False)
-#index_params = dict(algorithm=1, trees=5)
-#search_params = dict(checks=200)
-#matcher = cv2.FlannBasedMatcher(index_params, search_params)
-#matcher = cv2.BFMatcher()
-init_patient_bbox = (IMAGE_WIDTH//2 - (BBOX_WIDTH//2), IMAGE_HEIGHT//2 - (BBOX_HEIGHT//2), IMAGE_WIDTH//2 + (BBOX_WIDTH//2), IMAGE_HEIGHT//2 + (BBOX_HEIGHT//2))
-
-X = deque()
-poptime = 0
-pop_period = 250 #ms
-#max_x =  np.array([1,1,1,1,1,1,1,1,1])#np.array([360, 7e5, 255, 255, 255])
-#max_x =  np.array([500,500**2,600,700,600*700,600,200,200,200])
-max_x =  np.array([480,600,480,600,600,255,255,255,1])
-queue_len = 20
-#scaler = StandardScaler()
-
-orb = cv2.ORB_create(nfeatures=500)
-#index_params = dict(algorithm=1, trees=5)
-#search_params = dict(checks=200)
-#matcher = cv2.FlannBasedMatcher(index_params, search_params)
-matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-
-
-
-
 # ----- MAIN LOOP -----
 
 try:
@@ -173,11 +145,10 @@ try:
             ui_state = utils.read_gpio_state(B0_PIN, B1_PIN)
         else: 
             ui_state = DEF_UI_STATE
+
+        # Update LCD
         if ENABLE_LCD:
             utils.update_lcd_board_state(lcd_monitor, ui_state)
-
-        # Check ESTOP
-        if ENABLE_LCD:
             estop = utils.check_estop(lcd_monitor)
             if estop:
                 if ENABLE_D_SIG:
@@ -185,8 +156,8 @@ try:
                 if ENABLE_A_SIG:
                     utils.send_a_stop(a_port)
                 break
+            utils.update_lcd_display(lcd_monitor, tracker_init, d, a, missing, ui_state, fps)
             
-
         # Get RealSense Images
         frames = pipeline.wait_for_frames()
         t = frames.get_timestamp()
@@ -209,19 +180,15 @@ try:
         center_dist = utils.get_center_distance(dep_img)
         if (center_dist > DIST_THRESH) and (not tracker_init):
             tracker_init = True 
-            #roi = utils.cut_bbox(img, init_patient_bbox)
-            #kp_p, des_p = orb.detectAndCompute(cv2.cvtColor(roi, cv2.COLOR_RGB2GRAY), None)
             x1 = utils.get_features_v4(orb, fimg, init_patient_bbox)
-            for _ in range(queue_len):
+            for _ in range(QUEUE_LEN):
                 X.appendleft(x1)
-
-            #centroid = np.mean(np.array(X) / max_x, axis=0)
             patient_bbox = init_patient_bbox
           
         elif (center_dist < DIST_THRESH) and (tracker_init) and (center_dist > 1e-6):
             tracker_init = False
-
-
+            while len(X)>0:
+                X.pop()
       
         # Update Tracker if Person is Detected
         if tracker_init and (len(clss) > 0) and len(boxes)>0:
@@ -235,66 +202,31 @@ try:
                 for xv in X:
                     dist = distance.cityblock(xv / max_x, sx)
                     total_d = total_d + dist
-                #print(f"{np.round(total_d, 4)}:  {sx}")
-
-                '''# matching score
-                if len(des) > 2 and len(des_p) > 2:
-                    matches = matcher.match(des, des_p)
-                    good_matches = [m for m in matches if m.distance < 24]
-                    mscore = len(good_matches) / min(len(des), len(des_p))
-                    print(f"{np.round(total_d, 4)}: {mscore}")
-                    '
-                    #total_d = total_d - 0.05*mscore'''
 
                 if total_d <= best_d:
                     best_d = total_d
                     best_i = i
                     best_x = x
-                    #des_p = des
-            
-            ###print(f"best_d: {best_d}")
             patient_bbox = boxes[best_i]
 
-            if (t - poptime > pop_period):
-                #print('update')
+            if (t - poptime > POP_PER):
                 X.pop()
                 X.appendleft(best_x)
-                #centroid = np.mean(np.array(X) / max_x, axis=0)
-               # max_x = np.max(np.array(X), axis=0)
-                #print(max_x)
                 poptime = t
 
-
-
-        '''if tracker_init:
-            num_people = len(clss)
-            if num_people == 0:
-                missing = True
-                ret = False
-            elif (num_people > 0) and missing:
-                #if np.sum(bbox) != 0:
-                missing = False
-                ret, bbox = tracker.update(per_img)
-            else:
-                ret, bbox = tracker.update(per_img)'''
-
         # Calculate Signals of Interest
-        '''if tracker_init and ret and bbox and not missing:
-            p1, p2 = utils.full_height_box(bbox, IMAGE_HEIGHT, IMAGE_WIDTH, width=ROI_WIDTH)
+        if tracker_init and (patient_bbox is not None) and not missing:
+            p1 = (patient_bbox[0], patient_bbox[2])
+            p2 = (patient_bbox[1], patient_bbox[3])
             d = utils.calculate_dist_from_roi(dep_img, p1, p2, BBOX_MIN, BBOX_QMIN)
             a = utils.calculate_ang(p1, p2, IMAGE_WIDTH, IMAGE_LFOV_DEG)
-        else:'''
-        d = None
-        a = None
-
-        # Write LCD Feedback
-        if ENABLE_LCD:
-            utils.update_lcd_display(lcd_monitor, tracker_init, d, a, missing, ui_state, fps)
+        else:
+            d = None
+            a = None
             
         # Write Motor Signals
         if ENABLE_D_SIG:
             utils.send_d_signals(d_port, d, ui_state, tracker_init, missing)
-
         if ENABLE_A_SIG:
             utils.send_a_signals(a_port, a, ui_state, tracker_init, missing)
 
@@ -314,9 +246,9 @@ try:
         # Write Log File
         if WRITE_OUTPUT:
             if tracker_init:
-                if ret and bbox:
+                if patient_bbox:
                     with open(output_dir, "a") as f:
-                       print(f"{t},{ui_state},{int(not tracker_init)},{d},{a},{fps},{bbox}", file=f)
+                       print(f"{t},{ui_state},{int(not tracker_init)},{d},{a},{fps},{patient_bbox}", file=f)
             else:
                 with open(output_dir, "a") as f:
                     print(f"{t},{ui_state},{int(not tracker_init)},{d},{a},{fps},()", file=f)

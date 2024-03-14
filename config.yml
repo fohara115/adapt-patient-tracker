@@ -1,5 +1,5 @@
 input:
-  live_feed: True
+  live_feed: False
   root: '/media/fohara/645E941F5E93E856/bme/data/'
   default: '20240210_113928.bag'
 
@@ -22,9 +22,12 @@ parameters:
   init_ui_state: 1
 
 tracker:
-  type: 'CSRT'
+  max_arr: [480,600,480,600,600,255,255,255,1]
   bbox_height: 460
   bbox_width: 200
+  pop_period: 250 #ms
+  queue_length: 20
+  orb_feats: 500
   bbox_qmin: 15
   bbox_min: 0.25
   roi_width: 200
