@@ -135,7 +135,7 @@ t_prev = 0
 
 # ----- SURF SETUP -----
 
-hess_thresh = 4500
+hess_thresh = 1000
 surf = cv2.xfeatures2d.SURF_create(hess_thresh)
 surf.setUpright(False)
 #index_params = dict(algorithm=1, trees=5)
@@ -146,8 +146,9 @@ init_patient_bbox = (IMAGE_WIDTH//2 - (BBOX_WIDTH//2), IMAGE_HEIGHT//2 - (BBOX_H
 
 X = deque()
 poptime = 0
-pop_period = 1000 #ms
-max_x = np.array([300, 4e5, 255, 255, 255])
+pop_period = 500 #ms
+max_x = np.array([360, 4e5, 155, 155, 155])
+queue_len = 5
 #scaler = StandardScaler()
 
 
@@ -202,33 +203,11 @@ try:
         if (center_dist > DIST_THRESH) and (not tracker_init):
             tracker_init = True 
             x1 = utils.get_features(surf, fimg, init_patient_bbox)
-            sx1 = x1 / max_x
-            X.appendleft(sx1)
-            X.appendleft(sx1)
-            X.appendleft(sx1)
-            X.appendleft(sx1)
-            X.appendleft(sx1)
-            centroid = np.mean(np.array(X), axis=0)
-            #while True:
-            #    kp_p, des_p = surf.detectAndCompute(utils.cut_bbox(fimg,init_patient_bbox), None)
-            #    if len(kp_p)>0:
-            #        break
-            #print(des_p)
-            #print(des_p.shape)
-            #print(type(des_p))
+            for _ in range(queue_len):
+                X.appendleft(x1)
+
+            centroid = np.mean(np.array(X) / max_x, axis=0)
             patient_bbox = init_patient_bbox
-            '''print(len(kp_p))
-            print(des_p)
-            print(des_p[0])
-            img = vis.draw_bboxes(utils.cut_bbox(col_img,init_patient_bbox), boxes, confs, clss)
-            img = show_fps(img, fps)
-            img = cv2.drawKeypoints(img, kp_p, None, (255,0,0), 4)
-            cv2.imshow('RealSense Sensors', img)
-            key = cv2.waitKey(1)
-            if key & 0xFF == ord('q') or key == 27:
-                break
-            time.sleep(20)
-            break'''
           
         elif (center_dist < DIST_THRESH) and (tracker_init) and (center_dist > 1e-6):
             tracker_init = False
@@ -237,68 +216,31 @@ try:
       
         # Update Tracker if Person is Detected
         if tracker_init and (len(clss) > 0) and len(boxes)>0:
-            best_d = 100
+            best_d = 10000
             best_i = None
             best_x = None
             for i, b in enumerate(boxes):
                 x = utils.get_features(surf, fimg, b)
                 sx = x / max_x
                 dist = distance.euclidean(centroid, sx)
+                print(f"{np.round(dist, 4)}:  {sx}")
 
                 if dist <= best_d:
                     best_d = dist
                     best_i = i
-                    best_sx = sx
+                    best_x = x
             
-            print(f"best_i: {best_i}")
+            print(f"best_d: {best_d}")
             patient_bbox = boxes[best_i]
-
 
             if (t - poptime > pop_period):
                 print('update')
                 X.pop()
-                X.appendleft(best_sx)
-                centroid = np.mean(np.array(X), axis=0)
+                X.appendleft(best_x)
+                centroid = np.mean(np.array(X) / max_x, axis=0)
+               # max_x = np.max(np.array(X), axis=0)
+                print(max_x)
                 poptime = t
-
-                
-
-            '''if abs(len(kp) - len(kp_p)) < 120:
-                    if (des_p is None) or (des is None):
-                        continue
-
-                    if (len(des_p) < 3) or (len(des) < 3):
-                        continue
-                    #print(f"{des_p.shape}   {des.shape}")
-                    
-                    nn_matches = matcher.knnMatch(des_p, des, 2)
-                
-                    num_match = 0
-                    for m,n in nn_matches:
-                        if m.distance < 0.7*n.distance:
-                            num_match = num_match + 1
-                    score = num_match/len(kp_p)
-
-                    if (score >= best):
-                        best = score
-                        best_i = i
-                        best_kp = kp
-                        best_des = des'''
-
-            #update 
-            '''if best_kp is not None:
-                #print(f"kpp{len(kp_p)}, kp{len(best_kp)}, {best}")
-                kp_p = best_kp 
-                des_p = best_des
-                patient_bbox = boxes[best_i]'''
-
-          #'''IDEAS: bbox area feature, custom knn, '''
-            
-
-
-                  
-
-
 
 
 
