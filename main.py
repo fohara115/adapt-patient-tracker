@@ -146,11 +146,11 @@ init_patient_bbox = (IMAGE_WIDTH//2 - (BBOX_WIDTH//2), IMAGE_HEIGHT//2 - (BBOX_H
 
 X = deque()
 poptime = 0
-pop_period = 500 #ms
+pop_period = 250 #ms
 #max_x =  np.array([1,1,1,1,1,1,1,1,1])#np.array([360, 7e5, 255, 255, 255])
 #max_x =  np.array([500,500**2,600,700,600*700,600,200,200,200])
-max_x =  np.array([480,640,480,600,600,255,255,255,1])
-queue_len = 5
+max_x =  np.array([480,600,480,600,600,255,255,255,1])
+queue_len = 20
 #scaler = StandardScaler()
 
 orb = cv2.ORB_create(nfeatures=500)
@@ -235,7 +235,7 @@ try:
                 for xv in X:
                     dist = distance.cityblock(xv / max_x, sx)
                     total_d = total_d + dist
-                print(f"{np.round(total_d, 4)}:  {sx}")
+                #print(f"{np.round(total_d, 4)}:  {sx}")
 
                 '''# matching score
                 if len(des) > 2 and len(des_p) > 2:
@@ -252,16 +252,16 @@ try:
                     best_x = x
                     #des_p = des
             
-            print(f"best_d: {best_d}")
+            ###print(f"best_d: {best_d}")
             patient_bbox = boxes[best_i]
 
             if (t - poptime > pop_period):
-                print('update')
+                #print('update')
                 X.pop()
                 X.appendleft(best_x)
                 #centroid = np.mean(np.array(X) / max_x, axis=0)
                # max_x = np.max(np.array(X), axis=0)
-                print(max_x)
+                #print(max_x)
                 poptime = t
 
 
@@ -300,10 +300,10 @@ try:
 
         # Display Window
         if DISP:
-            img = vis.draw_bboxes(col_img, boxes, confs, clss)
-            img = show_fps(img, fps)
+            img = show_fps(col_img, fps)
+            img = vis.draw_bboxes(img, boxes, confs, clss)
             if tracker_init and (len(clss) > 0):
-                #img = cv2.drawKeypoints(img, kp_p, None, (255,0,0), 4)
+                img = cv2.circle(img, ((patient_bbox[0]+patient_bbox[2])//2, IMAGE_HEIGHT//2), 25, (0,0,255),5)
                 img = cv2.rectangle(img, (patient_bbox[0], patient_bbox[1]), (patient_bbox[2], patient_bbox[3]), (0, 0, 255), 5)
             cv2.imshow('RealSense Sensors', img)
 
