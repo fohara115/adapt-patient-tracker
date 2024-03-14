@@ -10,6 +10,49 @@ from datetime import datetime
 
 # Overall, needs to be neatened
 
+
+def get_features_v4(orb, img, bbox):
+    roi = cut_bbox(img, bbox)
+    gimg = cv2.cvtColor(roi, cv2.COLOR_RGB2GRAY)
+    kp1 = orb.detect(gimg, None)
+
+    m1 = np.full(roi.shape[0], False, dtype=bool)
+    m1[roi.shape[0]//4:3*roi.shape[0]//4] = True
+
+    
+    return np.array([
+        len(kp1),
+        bbox[0],
+        bbox[1],
+        bbox[2],
+        bbox[3],       
+        np.round(np.mean(roi[m1,:,0])),
+        np.round(np.mean(roi[m1,:,1])),
+        np.round(np.mean(roi[m1,:,2])),
+        #np.round(np.std(roi[m1,:,0])),
+        #np.round(np.std(roi[m1,:,1])),
+        #np.round(np.std(roi[m1,:,2])),
+        np.sum(gimg > 1e-2) / (bbox[2]*bbox[3])
+    ])
+    '''
+    mask = np.any(roi != 0, axis=-1)
+    avg_col = np.squeeze(np.mean(roi[mask], axis=0))
+    print(bbox[1])
+    
+    return np.array([
+        len(kp1),
+        bbox[0],
+        bbox[1],
+        bbox[2],
+        bbox[3],       
+        np.round(avg_col[0]),
+        np.round(avg_col[0]),
+        np.round(avg_col[0]),
+        np.sum(gimg > 1e-2) / (bbox[2]*bbox[3])
+    ])'''
+
+
+
 def get_features_v3(kp, roi, bbox):
   
     return np.array([

@@ -148,7 +148,8 @@ X = deque()
 poptime = 0
 pop_period = 500 #ms
 #max_x =  np.array([1,1,1,1,1,1,1,1,1])#np.array([360, 7e5, 255, 255, 255])
-max_x =  np.array([500,500**2,600,700,600*700,600,200,200,200])
+#max_x =  np.array([500,500**2,600,700,600*700,600,200,200,200])
+max_x =  np.array([480,640,480,600,600,255,255,255,1])
 queue_len = 5
 #scaler = StandardScaler()
 
@@ -208,9 +209,9 @@ try:
         center_dist = utils.get_center_distance(dep_img)
         if (center_dist > DIST_THRESH) and (not tracker_init):
             tracker_init = True 
-            roi = utils.cut_bbox(img, init_patient_bbox)
-            kp_p, des_p = orb.detectAndCompute(cv2.cvtColor(roi, cv2.COLOR_RGB2GRAY), None)
-            x1 = utils.get_features_v3(kp_p, roi, init_patient_bbox)
+            #roi = utils.cut_bbox(img, init_patient_bbox)
+            #kp_p, des_p = orb.detectAndCompute(cv2.cvtColor(roi, cv2.COLOR_RGB2GRAY), None)
+            x1 = utils.get_features_v4(orb, fimg, init_patient_bbox)
             for _ in range(queue_len):
                 X.appendleft(x1)
 
@@ -228,35 +229,30 @@ try:
             best_i = None
             best_x = None
             for i, b in enumerate(boxes):
-                # get
-                roi = utils.cut_bbox(fimg, b)
-                kp, des = orb.detectAndCompute(cv2.cvtColor(roi, cv2.COLOR_RGB2GRAY), None)
-                
-                # feature queue total dist
-                x = utils.get_features_v3(kp, roi, b)
+                x = utils.get_features_v4(orb, fimg, b)
                 sx = x / max_x
                 total_d = 0
                 for xv in X:
-                    dist = distance.cosine(xv / max_x, sx)
+                    dist = distance.cityblock(xv / max_x, sx)
                     total_d = total_d + dist
-                #print(f"{np.round(total_d, 4)}:  {sx}")
+                print(f"{np.round(total_d, 4)}:  {sx}")
 
-                # matching score
+                '''# matching score
                 if len(des) > 2 and len(des_p) > 2:
                     matches = matcher.match(des, des_p)
                     good_matches = [m for m in matches if m.distance < 24]
                     mscore = len(good_matches) / min(len(des), len(des_p))
                     print(f"{np.round(total_d, 4)}: {mscore}")
-                    
-                    #total_d = total_d - 0.05*mscore
+                    '
+                    #total_d = total_d - 0.05*mscore'''
 
                 if total_d <= best_d:
                     best_d = total_d
                     best_i = i
                     best_x = x
-                    des_p = des
+                    #des_p = des
             
-            print(f"best_d: {best_d}")gi
+            print(f"best_d: {best_d}")
             patient_bbox = boxes[best_i]
 
             if (t - poptime > pop_period):
