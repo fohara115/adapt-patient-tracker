@@ -1,5 +1,5 @@
 input:
-  live_feed: False
+  live_feed: True
   root: '/media/fohara/645E941F5E93E856/bme/data/'
   default: '20240210_113928.bag'
 

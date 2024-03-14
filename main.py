@@ -10,7 +10,6 @@ import utils
 import yaml
 
 from collections import deque
-#from sklearn.preprocessing import StandardScaler
 from scipy.spatial import distance
 
 from trt_utils.yolo_classes import get_cls_dict
@@ -237,7 +236,7 @@ try:
             if tracker_init and (len(clss) > 0):
                 img = cv2.circle(img, ((patient_bbox[0]+patient_bbox[2])//2, IMAGE_HEIGHT//2), 25, (0,0,255),5)
                 img = cv2.rectangle(img, (patient_bbox[0], patient_bbox[1]), (patient_bbox[2], patient_bbox[3]), (0, 0, 255), 5)
-            cv2.imshow('RealSense Sensors', img)
+            cv2.imshow('RealSense Sensors', col_img)
 
             key = cv2.waitKey(1)
             if key & 0xFF == ord('q') or key == 27:
@@ -257,6 +256,25 @@ try:
         fps, tic = utils.update_fps(fps, tic)
 
 finally:
+    '''#take photo
+    cv2.imwrite('/media/fohara/645E941F5E93E856/bme/photos/img1.png', col_img)
+    cv2.imwrite('/media/fohara/645E941F5E93E856/bme/photos/img2.png', fimg)
+    fimg = vis.draw_bboxes(fimg, boxes, confs, clss)
+    cv2.imwrite('/media/fohara/645E941F5E93E856/bme/photos/img3.png', fimg)
+    gimg = cv2.cvtColor(col_img, cv2.COLOR_RGB2GRAY)
+    kp1, des1 = orb.detectAndCompute(gimg, None)
+    cv2.drawKeypoints(fimg, kp1, fimg)
+    cv2.imwrite('/media/fohara/645E941F5E93E856/bme/photos/img4.png', fimg)
+    cv2.drawKeypoints(col_img, kp1, col_img)
+    cv2.imwrite('/media/fohara/645E941F5E93E856/bme/photos/img5.png', col_img)
+    
+    fimg = cv2.rectangle(fimg, (patient_bbox[0], patient_bbox[1]), (patient_bbox[2], patient_bbox[3]), (0, 0, 255), 5)
+    cv2.imwrite('/media/fohara/645E941F5E93E856/bme/photos/img6.png', fimg)
+    fimg = cv2.circle(fimg, ((patient_bbox[0]+patient_bbox[2])//2, IMAGE_HEIGHT//2), 25, (0,0,255),5)
+    cv2.imwrite('/media/fohara/645E941F5E93E856/bme/photos/img7.png', fimg)'''
+    
+
+    #prev
     cv2.destroyAllWindows()
     pipeline.stop()
     if ENABLE_LCD:
@@ -269,5 +287,8 @@ finally:
     while len(X)>0:
         X.pop()
     del X
+
+
+    
 
 
