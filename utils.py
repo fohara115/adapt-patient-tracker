@@ -10,6 +10,13 @@ from datetime import datetime
 
 # Overall, needs to be neatened
 
+def lcd_shutdown_msg(lcd_monitor):
+    lcd_monitor.write("Powering Off...\n".encode('utf-8'))
+    time.sleep(5)
+
+def lcd_boot_msg(lcd_monitor):
+    time.sleep(2)
+    lcd_monitor.write("Powering On...\n".encode('utf-8'))
 
 def get_features_v4(orb, img, bbox):
     roi = cut_bbox(img, bbox)

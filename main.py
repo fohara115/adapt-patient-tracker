@@ -11,12 +11,14 @@ import yaml
 
 from collections import deque
 from scipy.spatial import distance
-
 from trt_utils.yolo_classes import get_cls_dict
 from trt_utils.camera import add_camera_args, Camera
 from trt_utils.display import open_window, set_display, show_fps
 from trt_utils.visualization import BBoxVisualization
 from trt_utils.yolo_with_plugins import TrtYOLO
+
+
+
 
 
 
@@ -66,8 +68,17 @@ OUTPUT_ROOT = cfg['output']['output_root']
 
 input_dir, output_dir = utils.process_cli_args(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED)
 
-if not LIVE_FEED:
-    print(f"{input_dir}...")
+
+
+# ----- SERIAL SETUP -----
+
+if ENABLE_LCD:
+    lcd_monitor = serial.Serial(MONITOR_PORT, BAUD)
+    utils.lcd_boot_msg(lcd_monitor)
+if ENABLE_D_SIG:
+    d_port = serial.Serial(D_PORT, BAUD)
+if ENABLE_A_SIG:
+    a_port = serial.Serial(A_PORT, BAUD)
 
 
 
@@ -90,17 +101,8 @@ tracker_init = False
 missing = False
 poptime = 0
 init_patient_bbox = (IMAGE_WIDTH//2 - (BBOX_WIDTH//2), IMAGE_HEIGHT//2 - (BBOX_HEIGHT//2), IMAGE_WIDTH//2 + (BBOX_WIDTH//2), IMAGE_HEIGHT//2 + (BBOX_HEIGHT//2))
-
-
-
-# ----- SERIAL SETUP -----
-
-if ENABLE_LCD:
-    lcd_monitor = serial.Serial(MONITOR_PORT, BAUD)
-if ENABLE_D_SIG:
-    d_port = serial.Serial(D_PORT, BAUD)
-if ENABLE_A_SIG:
-    a_port = serial.Serial(A_PORT, BAUD)
+d = None
+a = None
 
 
 
@@ -110,7 +112,6 @@ if ENABLE_UI_INPUT:
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(B0_PIN, GPIO.IN)
     GPIO.setup(B1_PIN, GPIO.IN)
-
 
 
 
@@ -256,28 +257,12 @@ try:
         fps, tic = utils.update_fps(fps, tic)
 
 finally:
-    '''#take photo
-    cv2.imwrite('/media/fohara/645E941F5E93E856/bme/photos/img1.png', col_img)
-    cv2.imwrite('/media/fohara/645E941F5E93E856/bme/photos/img2.png', fimg)
-    fimg = vis.draw_bboxes(fimg, boxes, confs, clss)
-    cv2.imwrite('/media/fohara/645E941F5E93E856/bme/photos/img3.png', fimg)
-    gimg = cv2.cvtColor(col_img, cv2.COLOR_RGB2GRAY)
-    kp1, des1 = orb.detectAndCompute(gimg, None)
-    cv2.drawKeypoints(fimg, kp1, fimg)
-    cv2.imwrite('/media/fohara/645E941F5E93E856/bme/photos/img4.png', fimg)
-    cv2.drawKeypoints(col_img, kp1, col_img)
-    cv2.imwrite('/media/fohara/645E941F5E93E856/bme/photos/img5.png', col_img)
-    
-    fimg = cv2.rectangle(fimg, (patient_bbox[0], patient_bbox[1]), (patient_bbox[2], patient_bbox[3]), (0, 0, 255), 5)
-    cv2.imwrite('/media/fohara/645E941F5E93E856/bme/photos/img6.png', fimg)
-    fimg = cv2.circle(fimg, ((patient_bbox[0]+patient_bbox[2])//2, IMAGE_HEIGHT//2), 25, (0,0,255),5)
-    cv2.imwrite('/media/fohara/645E941F5E93E856/bme/photos/img7.png', fimg)'''
     
 
-    #prev
     cv2.destroyAllWindows()
     pipeline.stop()
     if ENABLE_LCD:
+        utils.lcd_shutdown_msg(lcd_monitor)
         lcd_monitor.close()
     if ENABLE_D_SIG:
         d_port.close()
@@ -287,8 +272,4 @@ finally:
     while len(X)>0:
         X.pop()
     del X
-
-
-    
-
 
