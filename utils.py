@@ -213,8 +213,9 @@ def send_d_signals(d_port, d, ui_state, tracker_init, missing):
     d_port.write(f"1,{d_value},{state},{ui_state}\n".encode('utf-8'))
 
 def send_a_signals(a_port, a, d, ui_state, tracker_init, missing):
-    if d < 1:
-        a = 0    
+    if d is not None:
+        if d < 1:
+            a = 0    
 
     a_value = np.round(a,1) if a else a
     if (not tracker_init):
@@ -275,7 +276,7 @@ def process_cli_args(iroot, oroot, default, live):
     return input_path, output_path
 
 
-def get_center_distance(depth_image, img_height=480, img_width=640, roi_height=128, roi_width=128, percentile=25):
+def get_center_distance(depth_image, img_height=480, img_width=640, roi_height=256, roi_width=256, percentile=10):
     '''Return center region of the frame to detect patient seated mode'''
     if depth_image.size == 0:
         return None

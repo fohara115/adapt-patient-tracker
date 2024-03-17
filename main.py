@@ -67,7 +67,7 @@ WRITE_OUTPUT = cfg['output']['log_output']
 OUTPUT_ROOT = cfg['output']['output_root']
 
 input_dir, output_dir = utils.process_cli_args(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED)
-time.sleep(5)
+
 
 
 # ----- SERIAL SETUP -----
