@@ -67,7 +67,7 @@ WRITE_OUTPUT = cfg['output']['log_output']
 OUTPUT_ROOT = cfg['output']['output_root']
 
 input_dir, output_dir = utils.process_cli_args(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED)
-
+time.sleep(5)
 
 
 # ----- SERIAL SETUP -----
@@ -227,8 +227,12 @@ try:
         # Write Motor Signals
         if ENABLE_D_SIG:
             utils.send_d_signals(d_port, d, ui_state, tracker_init, missing)
+            utils.send_a_signals(d_port, a, d, ui_state, tracker_init, missing)
         if ENABLE_A_SIG:
-            utils.send_a_signals(a_port, a, ui_state, tracker_init, missing)
+            utils.send_a_signals(a_port, a, d, ui_state, tracker_init, missing)
+            utils.send_d_signals(a_port, d, ui_state, tracker_init, missing)
+
+
 
         # Display Window
         if DISP:

@@ -212,7 +212,9 @@ def send_d_signals(d_port, d, ui_state, tracker_init, missing):
         state = 2
     d_port.write(f"1,{d_value},{state},{ui_state}\n".encode('utf-8'))
 
-def send_a_signals(a_port, a, ui_state, tracker_init, missing):
+def send_a_signals(a_port, a, d, ui_state, tracker_init, missing):
+    if d < 1:
+        a = 0    
 
     a_value = np.round(a,1) if a else a
     if (not tracker_init):
@@ -223,7 +225,8 @@ def send_a_signals(a_port, a, ui_state, tracker_init, missing):
         state = 3
     else:
         state = 2
-    a_port.write(f"2,{a_value},{state},{ui_state}\n".encode('utf-8'))
+    a_port.write(f"2,{a_value},{state}\n".encode('utf-8'))
+
 
 
 def send_adam_signals(d_port, a_port, d, a, ui_state, tracker_init, missing):
