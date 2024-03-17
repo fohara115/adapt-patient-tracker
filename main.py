@@ -68,7 +68,7 @@ OUTPUT_ROOT = cfg['output']['output_root']
 
 input_dir, output_dir = utils.process_cli_args(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED)
 
-print(input_dir)
+
 
 # ----- SERIAL SETUP -----
 
@@ -208,8 +208,6 @@ try:
                     best_i = i
                     best_x = x
             patient_bbox = boxes[best_i]
-            with open("/media/fohara/645E941F5E93E856/bme/rnd/dists2.txt", "a") as f:
-                print(f"{best_d}", file=f)
 
             if (t - poptime > POP_PER):
                 X.pop()
