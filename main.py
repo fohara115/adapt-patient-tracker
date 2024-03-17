@@ -68,7 +68,7 @@ OUTPUT_ROOT = cfg['output']['output_root']
 
 input_dir, output_dir = utils.process_cli_args(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED)
 
-
+print(input_dir)
 
 # ----- SERIAL SETUP -----
 
@@ -208,6 +208,8 @@ try:
                     best_i = i
                     best_x = x
             patient_bbox = boxes[best_i]
+            with open("/media/fohara/645E941F5E93E856/bme/rnd/dists2.txt", "a") as f:
+                print(f"{best_d}", file=f)
 
             if (t - poptime > POP_PER):
                 X.pop()
@@ -216,8 +218,8 @@ try:
 
         # Calculate Signals of Interest
         if tracker_init and (patient_bbox is not None) and not missing:
-            p1 = (patient_bbox[0], patient_bbox[2])
-            p2 = (patient_bbox[1], patient_bbox[3])
+            p1 = (patient_bbox[0], patient_bbox[1])
+            p2 = (patient_bbox[0]+patient_bbox[2], patient_bbox[1]+patient_bbox[3])
             d = utils.calculate_dist_from_roi(dep_img, p1, p2, BBOX_MIN, BBOX_QMIN)
             a = utils.calculate_ang(p1, p2, IMAGE_WIDTH, IMAGE_LFOV_DEG)
         else:
@@ -246,7 +248,7 @@ try:
         # Write Log File
         if WRITE_OUTPUT:
             if tracker_init:
-                if patient_bbox:
+                if patient_bbox is not None:
                     with open(output_dir, "a") as f:
                        print(f"{t},{ui_state},{int(not tracker_init)},{d},{a},{fps},{patient_bbox}", file=f)
             else:
