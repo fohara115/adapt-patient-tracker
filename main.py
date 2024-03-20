@@ -67,7 +67,7 @@ WRITE_OUTPUT = cfg['output']['log_output']
 OUTPUT_ROOT = cfg['output']['output_root']
 
 input_dir, output_dir = utils.process_cli_args(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED)
-time.sleep(5)
+
 
 
 # ----- SERIAL SETUP -----
@@ -252,10 +252,10 @@ try:
             if tracker_init:
                 if patient_bbox is not None:
                     with open(output_dir, "a") as f:
-                       print(f"{t},{ui_state},{int(not tracker_init)},{d},{a},{fps},{patient_bbox}", file=f)
+                       print(f"{t},{ui_state},{int(not tracker_init)},{d},{a},{fps},{patient_bbox[0]},{patient_bbox[1]},{patient_bbox[2]},{patient_bbox[3]},{len(confs)}", file=f)
             else:
                 with open(output_dir, "a") as f:
-                    print(f"{t},{ui_state},{int(not tracker_init)},{d},{a},{fps},()", file=f)
+                    print(f"{t},{ui_state},{int(not tracker_init)},{d},{a},{fps},None,None,None,None,{len(confs)}", file=f)
         
         # Update FPS
         fps, tic = utils.update_fps(fps, tic)
