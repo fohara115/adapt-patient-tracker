@@ -1,14 +1,14 @@
 input:
-  live_feed: True
+  live_feed: False
   root: '/media/fohara/645E941F5E93E856/bme/data/'
   default: '20240210_113928.bag'
 
 project:
   display_window: False
-  lcd_monitor: True
-  enable_ui_input: True
-  enable_d_signal: True
-  enable_a_signal: True
+  lcd_monitor: False
+  enable_ui_input: False
+  enable_d_signal: False
+  enable_a_signal: False
 
 video:
   clip_limit: 3.5
@@ -26,7 +26,7 @@ tracker:
   bbox_height: 460
   bbox_width: 200
   pop_period: 250 #ms
-  queue_length: 20
+  queue_length: 160
   orb_feats: 500
   bbox_qmin: 15
   bbox_min: 0.25
