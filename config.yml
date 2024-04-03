@@ -8,7 +8,7 @@ project:
   lcd_monitor: True
   enable_ui_input: True
   enable_d_signal: True
-  enable_a_signal: False
+  enable_a_signal: True
 
 video:
   clip_limit: 3.5
