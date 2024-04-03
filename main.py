@@ -17,9 +17,6 @@ from trt_utils.display import open_window, set_display, show_fps
 from trt_utils.visualization import BBoxVisualization
 from trt_utils.yolo_with_plugins import TrtYOLO
 
-print('Delaying...')
-time.sleep(10)
-print('Starting...')
 
 
 # ----- LOAD CONFIG & ARGS -----
