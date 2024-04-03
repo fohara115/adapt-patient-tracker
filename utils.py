@@ -204,6 +204,7 @@ def update_lcd_board_state(lcd_monitor, ui_state):
 def send_d_signals(d_port, d, ui_state, tracker_init, missing):
 
     d_value = np.round(d*100,1) if d else d
+
     if (not tracker_init):
         state = 1
     elif (ui_state == 0):

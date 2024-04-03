@@ -178,7 +178,7 @@ try:
 
         # Switch Tracker On/Off From Center Distance
         center_dist = utils.get_center_distance(dep_img)
-        if (center_dist > DIST_THRESH) and (not tracker_init):
+        if (center_dist > DIST_THRESH) and (not tracker_init) and (len(clss) > 0):
             tracker_init = True 
             x1 = utils.get_features_v4(orb, fimg, init_patient_bbox)
             X.appendleft(x1) 
@@ -186,6 +186,7 @@ try:
           
         elif (center_dist < DIST_THRESH) and (tracker_init) and (center_dist > 1e-6):
             tracker_init = False
+            X = deque()
       
         # Update Tracker if Person is Detected
         if tracker_init and (len(clss) > 0) and len(boxes)>0:
@@ -212,9 +213,6 @@ try:
                 X.pop()
                 X.appendleft(best_x)
                 poptime = t
-
-        if not tracker_init and (len(X) > 0):
-            X.pop()
 
         # Calculate Signals of Interest
         if tracker_init and (patient_bbox is not None) and (len(clss) > 0):
