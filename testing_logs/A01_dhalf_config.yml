@@ -1,0 +1,57 @@
+input:
+  live_feed: False
+  root: '/media/fohara/645E941F5E93E856/bme/data/'
+  default: '20240210_113928.bag'
+
+project:
+  display_window: False
+  lcd_monitor: False
+  enable_ui_input: False
+  enable_d_signal: False
+  enable_a_signal: False
+
+video:
+  clip_limit: 3.5
+  img_height: 480
+  img_width: 640
+  img_channels: 3
+  img_wide_fov_deg: 42
+
+parameters:
+  seated_trigger: 1.0
+  init_ui_state: 1
+
+tracker:
+  max_arr: [480,600,480,600,600,255,255,255,1]
+  bbox_height: 460
+  bbox_width: 200
+  pop_period: 500 #ms
+  queue_length: 10
+  orb_feats: 500
+  bbox_qmin: 15
+  bbox_min: 0.25
+  roi_width: 200
+  
+model:
+  name: 'yolov4-tiny'
+  cat_num: 80
+  person_label: 0
+  letter_box: True
+  conf_thr: 0.2
+
+gpio:
+  byte0: 16
+  byte1: 15
+  safety_light: 26
+
+serial: # sudo chmod a+rw /dev/ttyUSB0
+  baud_rate: 9600
+  lcd_port: '/dev/ttyUSB0'
+  d_port: '/dev/ttyACM1'
+  a_port: '/dev/ttyACM0'
+
+output:
+  log_output: True
+  output_root: '/home/fohara/project/adapt-patient-tracker/testing_logs/'
+
+
