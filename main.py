@@ -17,7 +17,8 @@ from trt_utils.display import open_window, set_display, show_fps
 from trt_utils.visualization import BBoxVisualization
 from trt_utils.yolo_with_plugins import TrtYOLO
 
-
+time.sleep(5)
+print('starting')
 
 # ----- LOAD CONFIG & ARGS -----
 
@@ -249,10 +250,10 @@ try:
             if tracker_init:
                 if patient_bbox is not None:
                     with open(output_dir, "a") as f:
-                       print(f"{t},{ui_state},{int(not tracker_init)},{d},{a},{fps},{patient_bbox[0]},{patient_bbox[1]},{patient_bbox[2]},{patient_bbox[3]},{len(confs)}", file=f)
+                       print(f"{t}|{ui_state}|{int(not tracker_init)}|{d}|{a}|{fps}|{patient_bbox[0]},{patient_bbox[1]}|{patient_bbox[2]}|{patient_bbox[3]}|{len(confs)}|{x}|{X}", file=f)
             else:
                 with open(output_dir, "a") as f:
-                    print(f"{t},{ui_state},{int(not tracker_init)},{d},{a},{fps},None,None,None,None,{len(confs)}", file=f)
+                    print(f"{t}|{ui_state}|{int(not tracker_init)}|{d}|{a}|{fps}|None|None|None|None|{len(confs)}|None|None", file=f)
         
         # Update FPS
         fps, tic = utils.update_fps(fps, tic)
