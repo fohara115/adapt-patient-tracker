@@ -1,13 +1,13 @@
 input:
-  live_feed: False
+  live_feed: True
   root: '/media/fohara/645E941F5E93E856/bme/data/'
   default: '20240210_113928.bag'
 
 project:
   display_window: False
-  lcd_monitor: False
-  enable_ui_input: False
-  enable_d_signal: False
+  lcd_monitor: True
+  enable_ui_input: True
+  enable_d_signal: True
   enable_a_signal: False
 
 video:
@@ -26,7 +26,7 @@ tracker:
   bbox_height: 460
   bbox_width: 200
   pop_period: 250 #ms
-  queue_length: 160
+  queue_length: 20
   orb_feats: 500
   bbox_qmin: 15
   bbox_min: 0.25
@@ -47,11 +47,11 @@ gpio:
 serial: # sudo chmod a+rw /dev/ttyUSB0
   baud_rate: 9600
   lcd_port: '/dev/ttyUSB0'
-  d_port: '/dev/ttyACM1'
-  a_port: '/dev/ttyACM0'
+  d_port: '/dev/ttyACM0'
+  a_port: '/dev/ttyACM1'
 
 output:
-  log_output: True
+  log_output: False
   output_root: '/home/fohara/project/adapt-patient-tracker/testing_logs/'
 
 

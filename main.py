@@ -181,14 +181,11 @@ try:
         if (center_dist > DIST_THRESH) and (not tracker_init):
             tracker_init = True 
             x1 = utils.get_features_v4(orb, fimg, init_patient_bbox)
-            for _ in range(QUEUE_LEN):
-                X.appendleft(x1)
+            X.appendleft(x1) 
             patient_bbox = init_patient_bbox
           
         elif (center_dist < DIST_THRESH) and (tracker_init) and (center_dist > 1e-6):
             tracker_init = False
-            while len(X)>0:
-                X.pop()
       
         # Update Tracker if Person is Detected
         if tracker_init and (len(clss) > 0) and len(boxes)>0:
@@ -197,6 +194,8 @@ try:
             best_x = None
             for i, b in enumerate(boxes):
                 x = utils.get_features_v4(orb, fimg, b)
+                if len(X) < QUEUE_LEN:
+                    X.appendleft(x)
                 sx = x / max_x
                 total_d = 0
                 for xv in X:
@@ -214,8 +213,11 @@ try:
                 X.appendleft(best_x)
                 poptime = t
 
+        if not tracker_init and (len(X) > 0):
+            X.pop()
+
         # Calculate Signals of Interest
-        if tracker_init and (patient_bbox is not None) and not missing:
+        if tracker_init and (patient_bbox is not None) and (len(clss) > 0):
             p1 = (patient_bbox[0], patient_bbox[1])
             p2 = (patient_bbox[0]+patient_bbox[2], patient_bbox[1]+patient_bbox[3])
             d = utils.calculate_dist_from_roi(dep_img, p1, p2, BBOX_MIN, BBOX_QMIN)

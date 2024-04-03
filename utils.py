@@ -166,6 +166,7 @@ def full_height_box(bbox, img_h, img_w, width=200):
 
 def send_d_stop(d_port):
     d_port.write(f"1,None,4,None\n".encode('utf-8'))
+    print(f"1,None,4,None\n".encode('utf-8'))
 
 def send_a_stop(a_port):
     a_port.write(f"2,None,4,None\n".encode('utf-8'))
@@ -211,6 +212,7 @@ def send_d_signals(d_port, d, ui_state, tracker_init, missing):
     else:
         state = 2
     d_port.write(f"1,{d_value},{state},{ui_state}\n".encode('utf-8'))
+    print(f"1,{d_value},{state},{ui_state}\n".encode('utf-8'))
 
 def send_a_signals(a_port, a, d, ui_state, tracker_init, missing):
     if d is not None:
