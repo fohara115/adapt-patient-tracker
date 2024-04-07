@@ -8,15 +8,16 @@ import time
 import Jetson.GPIO as GPIO
 from datetime import datetime
 
-# Overall, needs to be neatened
 
 def lcd_shutdown_msg(lcd_monitor):
     lcd_monitor.write("Powering Off...\n".encode('utf-8'))
     time.sleep(5)
 
+
 def lcd_boot_msg(lcd_monitor):
     time.sleep(2)
     lcd_monitor.write("Powering On...\n".encode('utf-8'))
+
 
 def get_features_v4(orb, img, bbox):
     roi = cut_bbox(img, bbox)
@@ -41,23 +42,6 @@ def get_features_v4(orb, img, bbox):
         #np.round(np.std(roi[m1,:,2])),
         np.sum(gimg > 1e-2) / (bbox[2]*bbox[3])
     ])
-    '''
-    mask = np.any(roi != 0, axis=-1)
-    avg_col = np.squeeze(np.mean(roi[mask], axis=0))
-    print(bbox[1])
-    
-    return np.array([
-        len(kp1),
-        bbox[0],
-        bbox[1],
-        bbox[2],
-        bbox[3],       
-        np.round(avg_col[0]),
-        np.round(avg_col[0]),
-        np.round(avg_col[0]),
-        np.sum(gimg > 1e-2) / (bbox[2]*bbox[3])
-    ])'''
-
 
 
 def get_features_v3(kp, roi, bbox):
@@ -91,6 +75,7 @@ def get_features_v2(orb, img, bbox):
         np.round(np.mean(roi[:,:,2]))
     ])
 
+
 def get_features(surf, img, bbox):
     roi = cut_bbox(img, bbox)
     kp = surf.detect(roi, None)
@@ -111,7 +96,6 @@ def get_features(surf, img, bbox):
     ])
 
 
-
 def cut_bbox(img, bbox):
     return img[bbox[1]:bbox[1]+bbox[3], bbox[0]:bbox[0]+bbox[2]]
 
@@ -127,12 +111,6 @@ def calculate_dist_from_roi(dep_img, p1, p2, bbmin, qmin):
         return np.percentile(filt, qmin)
     else:
         return None
-
-    #print(roi.shape)
-    #cv2.destroyAllWindows()
-    #cv2.imshow('New', roi)
-    #cv2.waitKey()
-    #time.sleep(15)
 
 
 def update_lcd_display(lcd_monitor, tracker_init, d, a, missing, ui_state, fps):
@@ -167,8 +145,10 @@ def full_height_box(bbox, img_h, img_w, width=200):
 def send_d_stop(d_port):
     d_port.write(f"1,None,4,None\n".encode('utf-8'))
 
+
 def send_a_stop(a_port):
     a_port.write(f"2,None,4,None\n".encode('utf-8'))
+
 
 def check_estop(lcd_monitor):
      if lcd_monitor.in_waiting > 0:
@@ -199,6 +179,7 @@ def update_lcd_board_state(lcd_monitor, ui_state):
     else:
         lcd_monitor.write(f"S2\n".encode('utf-8'))
 
+
 def send_d_signals(d_port, d, ui_state, tracker_init, missing):
 
     d_value = np.round(d*100,1) if d else d
@@ -211,6 +192,7 @@ def send_d_signals(d_port, d, ui_state, tracker_init, missing):
     else:
         state = 2
     d_port.write(f"1,{d_value},{state},{ui_state}\n".encode('utf-8'))
+
 
 def send_a_signals(a_port, a, d, ui_state, tracker_init, missing):
     if d is not None:
@@ -227,7 +209,6 @@ def send_a_signals(a_port, a, d, ui_state, tracker_init, missing):
     else:
         state = 2
     a_port.write(f"2,{a_value},{state}\n".encode('utf-8'))
-
 
 
 def send_adam_signals(d_port, a_port, d, a, ui_state, tracker_init, missing):
@@ -252,6 +233,7 @@ def update_fps(fps, tic):
     curr_fps = 1.0 / (toc - tic)
     fps = curr_fps if fps == 0.0 else (fps*0.5 + curr_fps*0.5)
     return fps, toc
+
 
 def process_cli_args(iroot, oroot, default, live):
     'process directories and filenames for io'
@@ -291,7 +273,6 @@ def get_center_distance(depth_image, img_height=480, img_width=640, roi_height=2
         return 0
 
 
-
 def format_frames(align, frames, depth_scale):
     '''Create cleaned np arrays from pipeline frames and align'''
 
@@ -318,6 +299,7 @@ def depth_masking(depth_image, clip_dist, image_height=480, image_width=640, num
     mask = np.where((depth_image < clip_dist) & (depth_image > 1e-6), (1), np.zeros((image_height, image_width), np.uint8))
     
     return np.dstack((mask,mask,mask))
+
 
 def person_masking(boxes, image_height=480, image_width=640, num_channels=3):
     '''480x640x3 Mask of 1's and 0's from classification boxes'''
@@ -389,7 +371,6 @@ def load_live_stream():
     config.enable_all_streams()
 
     return pipeline, config
-
 
 
 def display_pipeline(pipeline, config):

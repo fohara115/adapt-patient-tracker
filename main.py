@@ -19,9 +19,6 @@ from trt_utils.yolo_with_plugins import TrtYOLO
 
 
 
-
-
-
 # ----- LOAD CONFIG & ARGS -----
 
 cfg = yaml.load(open('config.yml', 'r'), Loader=yaml.CLoader)
@@ -67,7 +64,7 @@ WRITE_OUTPUT = cfg['output']['log_output']
 OUTPUT_ROOT = cfg['output']['output_root']
 
 input_dir, output_dir = utils.process_cli_args(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED)
-time.sleep(5)
+
 
 
 # ----- SERIAL SETUP -----
@@ -140,11 +137,13 @@ try:
     tic = time.time()
     while True:
 
+
         # Get UI Input
         if ENABLE_UI_INPUT:
             ui_state = utils.read_gpio_state(B0_PIN, B1_PIN)
         else: 
             ui_state = DEF_UI_STATE
+
 
         # Update LCD
         if ENABLE_LCD:
@@ -158,6 +157,7 @@ try:
                 break
             utils.update_lcd_display(lcd_monitor, tracker_init, d, a, missing, ui_state, fps)
             
+
         # Get RealSense Images
         frames = pipeline.wait_for_frames()
         t = frames.get_timestamp()
@@ -168,13 +168,16 @@ try:
         if error:
             continue
 
+
         # Get YOLO Bounding Boxes 
         boxes, confs, clss = trt_yolo.detect(col_img, CONF_THRESH)
         boxes, confs, clss = boxes[clss==PERSON_CLASS], confs[clss==PERSON_CLASS], clss[clss==PERSON_CLASS]
 
+
         # Mask Colour Images
         depth_mask = utils.depth_masking(dep_img, clip_dist=CLIP_DIST)
         fimg = col_img*depth_mask
+
 
         # Switch Tracker On/Off From Center Distance
         center_dist = utils.get_center_distance(dep_img)
@@ -190,6 +193,7 @@ try:
             while len(X)>0:
                 X.pop()
       
+
         # Update Tracker if Person is Detected
         if tracker_init and (len(clss) > 0) and len(boxes)>0:
             best_d = 10000
@@ -214,6 +218,7 @@ try:
                 X.appendleft(best_x)
                 poptime = t
 
+
         # Calculate Signals of Interest
         if tracker_init and (patient_bbox is not None) and not missing:
             p1 = (patient_bbox[0], patient_bbox[1])
@@ -223,7 +228,8 @@ try:
         else:
             d = None
             a = None
-            
+
+
         # Write Motor Signals
         if ENABLE_D_SIG:
             utils.send_d_signals(d_port, d, ui_state, tracker_init, missing)
@@ -231,7 +237,6 @@ try:
         if ENABLE_A_SIG:
             utils.send_a_signals(a_port, a, d, ui_state, tracker_init, missing)
             utils.send_d_signals(a_port, d, ui_state, tracker_init, missing)
-
 
 
         # Display Window
@@ -247,6 +252,7 @@ try:
             if key & 0xFF == ord('q') or key == 27:
                 break
 
+
         # Write Log File
         if WRITE_OUTPUT:
             if tracker_init:
@@ -256,6 +262,7 @@ try:
             else:
                 with open(output_dir, "a") as f:
                     print(f"{t},{ui_state},{int(not tracker_init)},{d},{a},{fps},()", file=f)
+        
         
         # Update FPS
         fps, tic = utils.update_fps(fps, tic)
