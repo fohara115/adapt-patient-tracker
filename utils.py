@@ -237,6 +237,28 @@ def update_fps(fps, tic):
     fps = curr_fps if fps == 0.0 else (fps*0.5 + curr_fps*0.5)
     return fps, toc
 
+def process_cli_args_wstate(iroot, oroot, default, live, state):
+    'process directories and filenames for io'
+
+    argv = sys.argv[1:]
+    opts, args = getopt.getopt(argv, 'e')
+
+    if (len(args)==0):
+        input_path = iroot+default
+        output_path = oroot+'default_'+default
+    elif (len(args)==1):
+        input_path = iroot+args[0]
+        output_path = oroot+args[0]
+    elif (len(args)>1):
+        input_path = iroot+args[0]
+        output_path = oroot+args[1]+args[0]
+
+    if live:
+        now = datetime.now()
+        output_path = oroot+str(state)+'_'+now.strftime("%Y%m%d_%H%M%S")+'.txt'
+
+    return input_path, output_path
+
 
 def process_cli_args(iroot, oroot, default, live):
     'process directories and filenames for io'

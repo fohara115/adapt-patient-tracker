@@ -63,7 +63,7 @@ WRITE_OUTPUT = cfg['output']['log_output']
 STATE_FILE = cfg['output']['state_file']
 OUTPUT_ROOT = cfg['output']['output_root']
 
-input_dir, output_dir = utils.process_cli_args(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED)
+input_dir, output_dir = utils.process_cli_args_wstate(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED)
 
 
 
