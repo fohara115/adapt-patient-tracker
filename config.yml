@@ -47,11 +47,12 @@ gpio:
 serial: # sudo chmod a+rw /dev/ttyUSB0
   baud_rate: 9600
   lcd_port: '/dev/ttyUSB0'
-  d_port: '/dev/ttyACM1'
-  a_port: '/dev/ttyACM0'
+  d_port: '/dev/ttyACM0'
+  a_port: '/dev/ttyACM1'
 
 output:
   log_output: False
-  output_root: '/home/fohara/project/adapt-patient-tracker/logs/'
+  state_file: '/home/fohara/project/adapt-patient-tracker/fn_state.txt'
+  output_root: '/home/fohara/project/adapt-patient-tracker/testing_logs/'
 
 

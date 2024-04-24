@@ -18,7 +18,6 @@ from trt_utils.visualization import BBoxVisualization
 from trt_utils.yolo_with_plugins import TrtYOLO
 
 
-
 # ----- LOAD CONFIG & ARGS -----
 
 cfg = yaml.load(open('config.yml', 'r'), Loader=yaml.CLoader)
@@ -61,6 +60,7 @@ MONITOR_PORT = cfg['serial']['lcd_port']
 D_PORT = cfg['serial']['d_port']
 A_PORT = cfg['serial']['a_port']
 WRITE_OUTPUT = cfg['output']['log_output']
+STATE_FILE = cfg['output']['state_file']
 OUTPUT_ROOT = cfg['output']['output_root']
 
 input_dir, output_dir = utils.process_cli_args(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED)
@@ -181,17 +181,15 @@ try:
 
         # Switch Tracker On/Off From Center Distance
         center_dist = utils.get_center_distance(dep_img)
-        if (center_dist > DIST_THRESH) and (not tracker_init):
+        if (center_dist > DIST_THRESH) and (not tracker_init) and (len(clss) > 0):
             tracker_init = True 
             x1 = utils.get_features_v4(orb, fimg, init_patient_bbox)
-            for _ in range(QUEUE_LEN):
-                X.appendleft(x1)
+            X.appendleft(x1) 
             patient_bbox = init_patient_bbox
           
         elif (center_dist < DIST_THRESH) and (tracker_init) and (center_dist > 1e-6):
             tracker_init = False
-            while len(X)>0:
-                X.pop()
+            X = deque()
       
 
         # Update Tracker if Person is Detected
@@ -201,6 +199,8 @@ try:
             best_x = None
             for i, b in enumerate(boxes):
                 x = utils.get_features_v4(orb, fimg, b)
+                if len(X) < QUEUE_LEN:
+                    X.appendleft(x)
                 sx = x / max_x
                 total_d = 0
                 for xv in X:
@@ -220,7 +220,7 @@ try:
 
 
         # Calculate Signals of Interest
-        if tracker_init and (patient_bbox is not None) and not missing:
+        if tracker_init and (patient_bbox is not None) and (len(clss) > 0):
             p1 = (patient_bbox[0], patient_bbox[1])
             p2 = (patient_bbox[0]+patient_bbox[2], patient_bbox[1]+patient_bbox[3])
             d = utils.calculate_dist_from_roi(dep_img, p1, p2, BBOX_MIN, BBOX_QMIN)
@@ -258,10 +258,38 @@ try:
             if tracker_init:
                 if patient_bbox is not None:
                     with open(output_dir, "a") as f:
-                       print(f"{t},{ui_state},{int(not tracker_init)},{d},{a},{fps},{patient_bbox}", file=f)
+                       ss = f"{t}|{ui_state}|{int(not tracker_init)}|{d}|{a}|{fps}|{patient_bbox[0]}|{patient_bbox[1]}|{patient_bbox[2]}|{patient_bbox[3]}|{len(confs)}|x"
+                       
+                       s1 = ""
+                       for i, b in enumerate(boxes):
+                           x = utils.get_features_v4(orb, fimg, b)
+                           x = x / max_x
+
+                           if len(x) != 9:
+                               s1 = s1 + "|||||||||"
+                           else:
+                               s1 = s1 + f"|{x[0]}|{x[1]}|{x[2]}|{x[3]}|{x[4]}|{x[5]}|{x[6]}|{x[7]}|{x[8]}"
+                       for _ in range(10 - len(boxes)):
+                           s1 = s1 + "|||||||||"
+
+                       s2 = '|Q'
+
+                       s3 = ""
+                       for i in range(20):
+                           if (len(X)>(i)):
+                               if len(X[i]) != 9:
+                                   s3 = s3 + "|||||||||"
+                               else:
+                                   x = X[i] / max_x
+                                   s3 = s3 + f"|{x[0]}|{x[1]}|{x[2]}|{x[3]}|{x[4]}|{x[5]}|{x[6]}|{x[7]}|{x[8]}"
+                           else:
+                               s3 = s3 + "|||||||||"
+
+                           
+                       print(ss+s1+s2+s3, file=f)
             else:
                 with open(output_dir, "a") as f:
-                    print(f"{t},{ui_state},{int(not tracker_init)},{d},{a},{fps},()", file=f)
+                    print(f"{t}|{ui_state}|{int(not tracker_init)}|{d}|{a}|{fps}|None|None|None|None|{len(confs)}|None|None", file=f)
         
         
         # Update FPS
