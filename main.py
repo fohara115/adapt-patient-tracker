@@ -160,7 +160,7 @@ try:
             # Create the file
             if WRITE_OUTPUT:
                 with open(output_dir, 'w') as o:
-                o.write(f"OUTPUT for LIVE: {LIVE_FEED}   INPUT: {input_dir}\n")
+                    o.write(f"OUTPUT for LIVE: {LIVE_FEED}   INPUT: {input_dir}\n")
 
         # Search for OFF->ON Change
         if (prev_ui_state>0) and (ui_state==0):
@@ -291,7 +291,7 @@ try:
 
 
         # Write Log File
-        if WRITE_OUTPUT:
+        if WRITE_OUTPUT and (ui_state > 0):
             if tracker_init:
                 if patient_bbox is not None:
                     with open(output_dir, "a") as f:
