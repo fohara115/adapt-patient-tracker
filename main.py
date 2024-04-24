@@ -63,7 +63,18 @@ WRITE_OUTPUT = cfg['output']['log_output']
 STATE_FILE = cfg['output']['state_file']
 OUTPUT_ROOT = cfg['output']['output_root']
 
-input_dir, output_dir = utils.process_cli_args_wstate(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED)
+
+
+# ----- CLI SETUP -----
+
+with open(STATE_FILE, 'r') as f:
+        content = f.read()
+        try:
+            fn_state = int(content.strip())
+        except:
+            fn_state = "???"
+
+input_dir, output_dir = utils.process_cli_args_wstate(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED, state=fn_state)
 
 
 
@@ -117,6 +128,8 @@ if ENABLE_UI_INPUT:
 if WRITE_OUTPUT:
     with open(output_dir, 'w') as o:
         o.write(f"OUTPUT for LIVE: {LIVE_FEED}   INPUT: {input_dir}\n")
+
+    
 
 
 

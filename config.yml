@@ -53,6 +53,6 @@ serial: # sudo chmod a+rw /dev/ttyUSB0
 output:
   log_output: True
   state_file: '/home/fohara/project/adapt-patient-tracker/fn_state.txt'
-  output_root: '/home/fohara/project/adapt-patient-tracker/testing_logs/'
+  output_root: '/home/fohara/project/adapt-patient-tracker/conf_logs/'
 
 
