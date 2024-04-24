@@ -250,7 +250,35 @@ try:
             if tracker_init:
                 if patient_bbox is not None:
                     with open(output_dir, "a") as f:
-                       print(f"{t}|{ui_state}|{int(not tracker_init)}|{d}|{a}|{fps}|{patient_bbox[0]},{patient_bbox[1]}|{patient_bbox[2]}|{patient_bbox[3]}|{len(confs)}|{x}|{X}", file=f)
+                       ss = f"{t}|{ui_state}|{int(not tracker_init)}|{d}|{a}|{fps}|{patient_bbox[0]}|{patient_bbox[1]}|{patient_bbox[2]}|{patient_bbox[3]}|{len(confs)}|x"
+                       
+                       s1 = ""
+                       for i, b in enumerate(boxes):
+                           x = utils.get_features_v4(orb, fimg, b)
+                           x = x / max_x
+
+                           if len(x) != 9:
+                               s1 = s1 + "|||||||||"
+                           else:
+                               s1 = s1 + f"|{x[0]}|{x[1]}|{x[2]}|{x[3]}|{x[4]}|{x[5]}|{x[6]}|{x[7]}|{x[8]}"
+                       for _ in range(10 - len(boxes)):
+                           s1 = s1 + "|||||||||"
+
+                       s2 = '|Q'
+
+                       s3 = ""
+                       for i in range(20):
+                           if (len(X)>(i)):
+                               if len(X[i]) != 9:
+                                   s3 = s3 + "|||||||||"
+                               else:
+                                   x = X[i] / max_x
+                                   s3 = s3 + f"|{x[0]}|{x[1]}|{x[2]}|{x[3]}|{x[4]}|{x[5]}|{x[6]}|{x[7]}|{x[8]}"
+                           else:
+                               s3 = s3 + "|||||||||"
+
+                           
+                       print(ss+s1+s2+s3, file=f)
             else:
                 with open(output_dir, "a") as f:
                     print(f"{t}|{ui_state}|{int(not tracker_init)}|{d}|{a}|{fps}|None|None|None|None|{len(confs)}|None|None", file=f)
