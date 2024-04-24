@@ -67,14 +67,7 @@ OUTPUT_ROOT = cfg['output']['output_root']
 
 # ----- CLI SETUP -----
 
-with open(STATE_FILE, 'r') as f:
-        content = f.read()
-        try:
-            fn_state = int(content.strip())
-        except:
-            fn_state = "???"
 
-input_dir, output_dir = utils.process_cli_args_wstate(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED, state=fn_state)
 
 
 
@@ -123,16 +116,6 @@ if ENABLE_UI_INPUT:
 
 
 
-# ----- OUTPUT SETUP -----
-
-if WRITE_OUTPUT:
-    with open(output_dir, 'w') as o:
-        o.write(f"OUTPUT for LIVE: {LIVE_FEED}   INPUT: {input_dir}\n")
-
-    
-
-
-
 # ----- VIDEO SETUP -----
 
 pipeline, config = utils.load_live_stream() if LIVE_FEED else utils.load_bag_file(input_dir)
@@ -143,6 +126,11 @@ fps = 0
 t_prev = 0
 
 
+# ----- UI RESET SETUP -----
+
+prev_ui_state = 0
+ui_state = 0
+
 
 # ----- MAIN LOOP -----
 
@@ -150,12 +138,48 @@ try:
     tic = time.time()
     while True:
 
-
-        # Get UI Input
+        # Update UI State
         if ENABLE_UI_INPUT:
             ui_state = utils.read_gpio_state(B0_PIN, B1_PIN)
         else: 
             ui_state = DEF_UI_STATE
+
+        # Search for OFF->ON Change
+        if (prev_ui_state==0) and (ui_state>0):
+            # Create filename
+            with open(STATE_FILE, 'r') as f:
+                content = f.read()
+                try:
+                    fn_state = int(content.strip())
+                except:
+                    fn_state = "???"
+
+            input_dir, output_dir = utils.process_cli_args_wstate(iroot=INPUT_ROOT, oroot=OUTPUT_ROOT, default=DEFAULT_VID, live=LIVE_FEED, state=fn_state)
+
+
+            # Create the file
+            if WRITE_OUTPUT:
+                with open(output_dir, 'w') as o:
+                o.write(f"OUTPUT for LIVE: {LIVE_FEED}   INPUT: {input_dir}\n")
+
+        # Search for OFF->ON Change
+        if (prev_ui_state>0) and (ui_state==0):
+            # Update state file
+            with open(STATE_FILE, 'r') as f:
+                content = f.read()
+                try:
+                    fn_state = int(content.strip())
+                except:
+                    fn_state = "???"
+
+            with open(STATE_FILE, 'w') as f:
+                try:
+                    fn_state = fn_state + 1
+                except:
+                    fn_state = "???"
+
+                f.write('%d' % fn_state)
+            
 
 
         # Update LCD
@@ -307,6 +331,7 @@ try:
         
         # Update FPS
         fps, tic = utils.update_fps(fps, tic)
+        prev_ui_state = ui_state
 
 finally:
     
